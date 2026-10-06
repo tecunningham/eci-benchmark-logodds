@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ECI benchmarks in log-odds, with frontier ECI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-strict-dist-min@2.35.2/plotly-strict.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+ --bg:#fbfbf8;--ink:#1d2433;--muted:#5d6577;--grid:#e3e5ea;--panel:#ffffff;--line:#d4d7de;--accent:#2f5bd3;--eci:#111827;--band:rgba(17,24,39,.12);--labelbg:rgba(251,251,248,.82)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151c;--ink:#e6e8ee;--muted:#9aa2b3;--grid:#262b36;--panel:#181c25;--line:#323846;--accent:#8fb0ff;--eci:#ffffff;--band:rgba(255,255,255,.14);--labelbg:rgba(18,21,28,.82)}}
+:root[data-theme="dark"]{--bg:#12151c;--ink:#e6e8ee;--muted:#9aa2b3;--grid:#262b36;--panel:#181c25;--line:#323846;--accent:#8fb0ff;--eci:#ffffff;--band:rgba(255,255,255,.14);--labelbg:rgba(18,21,28,.82)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 32px}
+h1{font:500 clamp(1.4rem,3.4vw,2rem)/1.2 "Newsreader",Georgia,serif;margin:4px 0 6px}
+p.lede{color:var(--muted);max-width:74ch;margin:0 0 14px}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:0 0 8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:14px;padding:6px 12px;border:0;background:var(--panel);color:var(--ink);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+label{font-size:14px;color:var(--muted)}
+select{font:inherit;font-size:14px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);max-width:70vw}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0}
+.legend button{font:inherit;font-size:13px;display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.legend button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.legend .sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+#plot{width:100%;height:min(86vh,900px);min-height:600px}
+.notes{color:var(--muted);font-size:13.5px;max-width:82ch;margin-top:10px}
+.notes p{margin:6px 0}
+</style></head>
+<body><main>
+<h1 id="title">Frontier ECI and the benchmark scores behind it</h1>
+<p class="lede" id="lede"></p>
+<div class="controls">
+ <label>Lab <select id="lab"><option value="">All labs</option></select></label>
+ <div class="seg" role="group" aria-label="Which scores">
+  <button data-view="frontier" aria-pressed="true">Record-setting models</button>
+  <button data-view="all" aria-pressed="false">Plus all other models</button>
+ </div>
+ <div class="seg" role="group" aria-label="Right axis">
+  <button data-ax="aligned" aria-pressed="true">Slope-matched axis</button>
+  <button data-ax="fit" aria-pressed="false">Zoom ECI</button>
+ </div>
+ <div class="seg" role="group" aria-label="Labels">
+  <button data-lab="on" aria-pressed="true">Labels</button>
+  <button data-lab="off" aria-pressed="false">No labels</button>
+ </div>
+ <label>Highlight <select id="hl"><option value="">All benchmarks</option></select></label>
+</div>
+<div class="legend" id="legend" role="group" aria-label="Benchmark area; choose one to isolate it"></div>
+<div id="plot"></div>
+<div id="fallback" hidden><p class="lede">The interactive chart could not load here, so this is the static version.</p><img alt="Frontier ECI and benchmark scores chart" style="max-width:100%;height:auto" src="figures/eci_frontier_all.png"></div>
+<div class="notes">
+ <p>Data: Epoch AI's own ECI fit input (processed_data_for_eci.csv) and published ECI scores (eci_scores.csv) from benchmark_data.zip, snapshot of 1 Oct 2026, shown from GPT-4 (14 Mar 2023) onward. Each model's lab is the first organisation Epoch lists for it; labs with at least five models in the period can be chosen above. Every score is already floor- and ceiling-adjusted: (raw − random-guess baseline) ÷ (attainable ceiling − baseline), clipped to [0, 1], taking the best version within each model group. Frontier ECI is the running maximum by release date, over all labs or over the chosen lab's models; where several models share a date only the highest counts. <span id="count"></span> ECIs come from Epoch's joint fit over every lab's models (including the few pre-GPT-4 models not shown), so a lab's frontier is directly comparable with the overall one.</p><p>Areas follow the primary domain tag on Epoch's ECI page, grouped into seven: Math; Software engineering (includes Cybench); Agents &amp; computer use; Science; Reasoning &amp; games (conceptual reasoning plus games); Multimodal; Language &amp; knowledge (language understanding, world knowledge, long context, writing). Seven benchmarks have no tag there and were assigned by hand: METR Time Horizons, DeepResearch Bench (agents), LMCA (reasoning), Lech Mazur Writing (language), GeoBench (multimodal), and the two FrontierMath v1 sets (math).</p>
+ <p>Solid vertical lines mark the start of each year; dotted lines mark the release of each frontier model. The slope-matched right axis is scaled so a benchmark with the median fitted slope (0.107 logits per ECI point) runs parallel to the ECI line; steeper benchmarks climb faster than it. Scores of exactly 0 or 1 are pinned to 1% and 99%. Data CC BY 4.0, Epoch AI.</p>
+</div>
+</main>
+<script>
+function showFallback(){document.getElementById('plot').hidden=true;document.querySelector('.controls').hidden=true;document.getElementById('fallback').hidden=false}
+if(typeof Plotly==='undefined'){showFallback()}
+else try{
+const RAW=/*DATA*/;
+const sel=document.getElementById('hl');
+const D={areas:RAW.areas,cols:RAW.cols},B=RAW.b.map(b=>({name:b.name,rel:b.rel,area:b.area,p:b.p,fr:[],all:[]}));
+const M=RAW.models.map(([m,l,d,e,lo,hi])=>({m,l,d,e,lo,hi}));
+function frontier(ms){
+ const day={};ms.forEach(o=>{if(!day[o.d]||o.e>day[o.d].e)day[o.d]=o});
+ let best=-1e9;return Object.keys(day).sort().map(k=>day[k]).filter(o=>o.e>best&&(best=o.e,true));
+}
+const OV=frontier(M);
+let lab='';
+function derive(){
+ const mine=new Set(M.map((o,i)=>i).filter(i=>!lab||M[i].l===lab)),F=frontier(M.filter((o,i)=>mine.has(i))),fs=new Set(F);
+ const pt=(i,q)=>[M[i].d,q[1],q[2],M[i].m];
+ let nf=0,nall=0,nb=0;
+ B.forEach(d=>{d.fr=[];d.all=[];d.p.forEach(q=>{if(!mine.has(q[0]))return;nall++;if(fs.has(M[q[0]])){d.fr.push(pt(q[0],q));nf++}else d.all.push(pt(q[0],q))});if(d.fr.length)nb++});
+ D.eci=F.map(o=>[o.d,o.m,o.e,o.lo,o.hi]);D.alleci=M.filter((o,i)=>mine.has(i)).map(o=>[o.d,o.m,o.e]);D.overall=lab?OV.map(o=>[o.d,o.m,o.e]):null;
+ const who=lab?lab+"'s":'',n=F.length;
+ document.getElementById('title').textContent=(lab?who+' frontier ECI':'Frontier ECI')+' and the benchmark scores behind it';
+ document.getElementById('lede').textContent='Coloured lines are the benchmark scores of the '+n+(lab?' '+lab:'')+' models that set a new '+(lab?lab+' best':'frontier')+' ECI from GPT-4 onward (named along the top), in log-odds (left axis). Colour shows each benchmark’s area; tap an area to isolate it. The thick line is '+(lab?who+' frontier':'frontier')+' ECI itself (right axis), with its 90% interval'+(lab?'; the dashed grey line is the overall frontier across all labs.':'.');
+ document.getElementById('count').textContent='The '+n+' record-setting models contribute '+nf.toLocaleString()+' of the '+nall.toLocaleString()+' '+(lab?lab+' ':'')+'scores shown, on '+nb+' of the '+B.length+' benchmarks.';
+ [...sel.options].forEach(o=>{const d=B.find(x=>x.name===o.value);if(d)o.textContent=d.name+(d.rel?' ('+d.rel.slice(0,4)+')':'')+(d.fr.length?'':' – no record-setting-model scores')});
+ document.title=lab?lab+' frontier ECI and benchmark scores':'ECI benchmarks in log-odds, with frontier ECI';
+}
+function shade(hex,t){const n=parseInt(hex.slice(1),16);let c=[n>>16,(n>>8)&255,n&255];c=c.map(v=>Math.round(t>0?v+(255-v)*t:v*(1+t)));return'rgb('+c.join(',')+')'}
+D.areas.forEach(a=>{const g=B.filter(d=>d.area===a);g.forEach((d,k)=>d.col=shade(D.cols[a],g.length>1?(k/(g.length-1)-0.5)*0.36:0))});
+let ha='';
+const lg=document.getElementById('legend');
+D.areas.forEach(a=>{const b=document.createElement('button');b.type='button';b.dataset.area=a;b.setAttribute('aria-pressed','false');b.innerHTML='<span class="sw" style="background:'+D.cols[a]+'"></span>'+a;b.onclick=()=>{ha=ha===a?'':a;lg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.area===ha));build()};lg.appendChild(b)});
+[...B].sort((a,b)=>a.name.localeCompare(b.name)).forEach(d=>{const o=document.createElement('option');o.value=d.name;sel.appendChild(o)});
+const ls=document.getElementById('lab');
+RAW.labs.forEach(l=>{const o=document.createElement('option');o.value=o.textContent=l;ls.appendChild(o)});
+const fromHash=()=>{const h=decodeURIComponent((location.hash.match(/lab=([^&]*)/)||[])[1]||'');return RAW.labs.includes(h)?h:''};
+lab=fromHash();ls.value=lab;derive();
+let view='frontier',ax='aligned',hl='',labels=innerWidth>=640;
+function short(n){return n.replace('FrontierMath-Tiers-1-3-v2-Private','FrontierMath T1–3 v2').replace('FrontierMath-Tier-4-v2-Private','FrontierMath T4 v2')
+ .replace('FrontierMath-2025-02-28-Private','FrontierMath T1–3 (v1)').replace('FrontierMath-Tier-4-2025-07-01-Private','FrontierMath T4 (v1)').replace('OTIS Mock AIME 2024-2025','OTIS Mock AIME')}
+const END=RAW.snapshot,DAY=864e5,GUTTER='2026-06-01',GX='2026-10-12';
+function modelAnns(){
+ const el=document.getElementById('plot'),narrow=innerWidth<640;
+ const W=Math.max(200,el.clientWidth-(narrow?80:124));
+ const x0=+new Date('2023-02-15'),x1=+new Date(labels?'2027-06-15':'2026-10-31');
+ const g=narrow?10:13;
+ const it=D.eci.map(e=>({d:e[0],m:e[1],e:e[2],px:(+new Date(e[0])-x0)/(x1-x0)*W}));
+ it.forEach((o,k)=>{o.lx=o.px;if(k&&o.lx<it[k-1].lx+g)o.lx=it[k-1].lx+g});
+ for(let k=it.length-1;k>=0;k--){const cap=k===it.length-1?W-4:it[k+1].lx-g;if(it[k].lx>cap)it[k].lx=cap}
+ const mut=css('--muted'),ink=css('--ink');
+ return {anns:it.map(o=>({x:o.d,y:1,xref:'x',yref:'paper',ax:o.lx-o.px,ay:-16,axref:'pixel',ayref:'pixel',text:o.m+' ('+o.e.toFixed(1)+')',textangle:-90,
+   xanchor:'center',yanchor:'bottom',showarrow:true,arrowhead:0,arrowwidth:0.7,arrowcolor:mut,standoff:0,font:{size:narrow?9:10.5,color:ink},
+   hovertext:o.m+': ECI '+o.e.toFixed(1),captureevents:false})),
+  lines:it.map(o=>({type:'line',xref:'x',yref:'paper',x0:o.d,x1:o.d,y0:0,y1:1,line:{color:ink,width:0.8,dash:'dot'},layer:'below',opacity:.32}))};
+}
+function labelAnns(){
+ const el=document.getElementById('plot'),narrow=innerWidth<640;
+ const H=Math.max(200,el.clientHeight-(innerWidth<640?215:225)),W=Math.max(200,el.clientWidth-(narrow?80:124));
+ const x0=+new Date('2023-02-15'),x1=+new Date('2027-06-15');const msPx=(x1-x0)/W, lPx=10/H;
+ const fs=10,g=(fs+2.5)*lPx,charPx=fs*0.62;
+ const items=B.filter(d=>d.fr.length&&(!hl||hl===d.name)&&(!ha||ha===d.area)).map(d=>{const e=d.fr[d.fr.length-1];return{d,ex:e[0],ey:e[1],txt:short(d.name)}});
+ const gut=items.filter(i=>i.ex>=GUTTER).sort((a,b)=>a.ey-b.ey);
+ // 1D spread in the right gutter, kept inside [-4.9,4.9]
+ gut.forEach((it,k)=>{it.ly=it.ey;if(k&&it.ly<gut[k-1].ly+g)it.ly=gut[k-1].ly+g});
+ for(let k=gut.length-1;k>=0;k--){const cap=k===gut.length-1?4.9:gut[k+1].ly-g;if(gut[k].ly>cap)gut[k].ly=cap}
+ if(gut.length&&gut[0].ly<-4.9){const sh=-4.9-gut[0].ly;gut.forEach(i=>i.ly+=sh)}
+ gut.forEach(i=>i.lx=GX);
+ // greedy placement for lines ending earlier, with leader lines when nudged
+ const placed=[],rest=items.filter(i=>i.ex<GUTTER).sort((a,b)=>a.ex.localeCompare(b.ex)||b.ey-a.ey);
+ rest.forEach(it=>{const lx=+new Date(it.ex)+7*DAY,w=(it.txt.length*charPx+8)*msPx;
+  const offs=[0];for(let k=1;k<=14;k++)offs.push(k*g,-k*g);
+  let y=it.ey;for(const o of offs){const yy=it.ey+o;if(yy>4.9||yy<-4.9)continue;
+   if(!placed.some(p=>lx<p.r&&lx+w>p.l&&Math.abs(yy-p.y)<g)&&!gut.some(p=>Math.abs(yy-p.ly)<g&&lx+w>+new Date(GX))){y=yy;break}}
+  placed.push({l:lx,r:lx+w,y});it.ly=y;it.lx=new Date(lx).toISOString().slice(0,10)});
+ return items.map(it=>({x:it.ex,y:it.ey,xref:'x',yref:'y',ax:it.lx,ay:it.ly,axref:'x',ayref:'y',text:it.txt,showarrow:true,arrowhead:0,arrowwidth:0.8,
+  arrowcolor:it.d.col,standoff:2,xanchor:'left',yanchor:'middle',font:{size:hl?12.5:fs,color:it.d.col,weight:600},bgcolor:css('--labelbg'),borderpad:1,opacity:1}));
+}
+const pct=[0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99];
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc=s=>s.replace(/%/g,'%%');
+function build(){
+ const tr=[];
+ B.forEach(d=>{
+  const on=(!hl||hl===d.name)&&(!ha||ha===d.area), op=on?1:0.07, big=hl===d.name;
+  const ht='<b>%{customdata[0]}</b><br>'+esc(d.name)+'<br>%{customdata[1]}, %{x|%b %Y}<extra></extra>';
+  if(view==='all'&&d.all.length) tr.push({x:d.all.map(p=>p[0]),y:d.all.map(p=>p[1]),customdata:d.all.map(p=>[p[3],(p[2]*100).toFixed(1)+'%']),
+   type:'scatter',mode:'markers',name:d.name,showlegend:false,marker:{color:d.col,size:4,opacity:0.3*op},hovertemplate:ht});
+  if(d.fr.length) tr.push({x:d.fr.map(p=>p[0]),y:d.fr.map(p=>p[1]),customdata:d.fr.map(p=>[p[3],(p[2]*100).toFixed(1)+'%']),
+   type:'scatter',mode:'lines+markers',name:d.name,showlegend:false,opacity:op,
+   line:{color:d.col,width:big?3.2:1.9},marker:{color:d.col,size:big?7.5:5.5,line:{color:css('--bg'),width:1}},hovertemplate:ht});
+ });
+ const E=D.eci,last=E[E.length-1];
+ const ex=E.map(e=>e[0]).concat([END]);
+ const ext=a=>a.concat([a[a.length-1]]);
+ const eciC=css('--eci'),band=css('--band');
+ // explicit step polygon for the 90% band (Plotly's hv + fill draws wedges)
+ const hiS=E.map(e=>e[4]??e[2]),loS=E.map(e=>e[3]??e[2]);const bx=[],bhi=[],blo=[];
+ E.forEach((e,i)=>{const nx=i<E.length-1?E[i+1][0]:END;bx.push(e[0],nx);bhi.push(hiS[i],hiS[i]);blo.push(loS[i],loS[i])});
+ const bandShapes=E.map((e,k)=>({type:'rect',xref:'x',yref:'y2',x0:e[0],x1:bx[2*k+1],y0:loS[k],y1:hiS[k],fillcolor:band,line:{width:0},layer:'below'}));
+ 
+ if(view==='all') tr.push({x:D.alleci.map(e=>e[0]),y:D.alleci.map(e=>e[2]),customdata:D.alleci.map(e=>e[1]),yaxis:'y2',type:'scatter',mode:'markers',
+   marker:{symbol:'diamond-open',size:5,color:eciC,opacity:.35},showlegend:false,hovertemplate:'<b>%{customdata}</b><br>ECI %{y:.1f}<extra></extra>'});
+ if(D.overall){const OVd=D.overall;tr.push({x:OVd.map(o=>o[0]).concat([END]),y:ext(OVd.map(o=>o[2])),customdata:ext(OVd.map(o=>o[1])),yaxis:'y2',type:'scatter',mode:'lines',line:{shape:'hv',color:css('--muted'),width:1.5,dash:'dash'},name:'Overall frontier',showlegend:false,hovertemplate:'Overall frontier ECI %{y:.1f}<br>%{customdata}<extra></extra>'})}
+ tr.push({x:ex,y:ext(E.map(e=>e[2])),yaxis:'y2',type:'scatter',mode:'lines',line:{shape:'hv',color:css('--bg'),width:8},hoverinfo:'skip',showlegend:false});
+ tr.push({x:ex,y:ext(E.map(e=>e[2])),customdata:ext(E.map(e=>[e[1],!Number.isFinite(e[3])?'anchor':e[3].toFixed(1)+' to '+e[4].toFixed(1)])),yaxis:'y2',type:'scatter',mode:'lines+markers',
+  line:{shape:'hv',color:eciC,width:3.5},marker:{size:8,color:eciC,symbol:'diamond',line:{color:css('--bg'),width:1.5}},name:'Frontier ECI',showlegend:false,
+  hovertemplate:'<b>%{customdata[0]}</b><br>'+(lab?lab+' frontier':'Frontier')+' ECI %{y:.1f} (90%: %{customdata[1]})<extra></extra>'});
+ const ink=css('--ink'),mut=css('--muted'),grid=css('--grid');const narrow=innerWidth<640;const MA=modelAnns();
+ // aligned: left spans 10 logits; right spans 10/0.107 ECI, ECI 140 at logit 0
+ const span=10/0.106875, fv=E.flatMap(e=>[e[3]??e[2],e[4]??e[2]]).concat(view==='all'?D.alleci.map(e=>e[2]):[]),
+  r2=ax==='aligned'?[140-span/2,140+span/2]:[Math.floor(Math.min(...fv)/5)*5-3,Math.ceil(Math.max(...fv)/5)*5+3];
+ const layout={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Public Sans, system-ui, sans-serif',color:ink,size:12},
+  margin:{l:narrow?42:62,r:narrow?38:62,t:narrow?175:185,b:40},hovermode:'closest',dragmode:narrow?false:'zoom',
+  xaxis:{type:'date',showgrid:false,zeroline:false,dtick:'M12',tick0:'2023-01-01',tickformat:'%Y',ticklabelmode:'period',ticks:'',range:['2023-02-15',labels?'2027-06-15':'2026-10-31'],tickfont:{color:mut}},annotations:(labels?labelAnns():[]).concat(MA.anns),shapes:bandShapes.concat(['2024','2025','2026','2027'].map(y=>({type:'line',xref:'x',yref:'paper',x0:y+'-01-01',x1:y+'-01-01',y0:0,y1:1,line:{color:mut,width:1.4},opacity:.55,layer:'below'}))).concat(MA.lines),
+  yaxis:{title:narrow?null:{text:'Benchmark score (log-odds scale)',font:{color:mut}},range:[-5,5],gridcolor:grid,zeroline:false,
+   tickvals:pct.map(p=>Math.log(p/(1-p))),ticktext:pct.map(p=>(p*100)+'%'),tickfont:{color:mut}},
+  yaxis2:{title:narrow?null:{text:(lab?lab+' frontier':'Frontier')+' ECI',font:{color:ink}},overlaying:'y',side:'right',range:r2,showgrid:false,zeroline:false,tickfont:{color:ink},dtick:10},
+  hoverlabel:{font:{family:'Public Sans, system-ui, sans-serif'}}};
+ Plotly.react('plot',tr,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']});
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',x===b));build()});
+document.querySelectorAll('[data-ax]').forEach(b=>b.onclick=()=>{ax=b.dataset.ax;document.querySelectorAll('[data-ax]').forEach(x=>x.setAttribute('aria-pressed',x===b));build()});
+document.querySelectorAll('[data-lab]').forEach(b=>{b.setAttribute('aria-pressed',(b.dataset.lab==='on')===labels);b.onclick=()=>{labels=b.dataset.lab==='on';document.querySelectorAll('[data-lab]').forEach(x=>x.setAttribute('aria-pressed',x===b));build()}});
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(build,200)});
+sel.onchange=()=>{hl=sel.value;build()};
+ls.onchange=()=>{lab=ls.value;derive();build();try{history.replaceState(null,'',lab?'#lab='+encodeURIComponent(lab):location.pathname+location.search)}catch(e){}};
+addEventListener('hashchange',()=>{lab=fromHash();ls.value=lab;derive();build()});
+build();
+const el=document.getElementById('plot');
+el.on('plotly_click',e=>{const n=e.points[0].data.name;if(!n||n==='Frontier ECI'||n.startsWith('trace'))return;hl=(hl===n)?'':n;sel.value=hl;build()});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',build);
+}catch(err){console.error(err);showFallback()}
+</script></body></html>
