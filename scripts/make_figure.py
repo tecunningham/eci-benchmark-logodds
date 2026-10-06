@@ -67,6 +67,7 @@ a2.fill_between(x,lo+[lo[-1]],hi+[hi[-1]],step='post',color='k',alpha=.1,lw=0)
 import matplotlib.patheffects as pe
 a2.step(x,y,where='post',color='k',lw=3,path_effects=[pe.Stroke(linewidth=7,foreground='white'),pe.Normal()]); a2.plot(x[:-1],y[:-1],'kD',ms=5,mec='white',mew=1)
 span=10/0.106875; a2.set_ylim(140-span/2,140+span/2); a2.set_ylabel('Frontier ECI (black)')
-fig.suptitle('Frontier ECI (black, right) and benchmark scores of the 22 models that set it from GPT-4 on (colour by area, left, log-odds)\nFrontier models named along the top with their ECI; right axis slope-matched to median benchmark; solid verticals = year starts, dotted = frontier model releases',fontsize=11,y=.99)
+ax.yaxis.tick_right(); ax.yaxis.set_label_position('right'); a2.yaxis.tick_left(); a2.yaxis.set_label_position('left')
+fig.suptitle('Frontier ECI (black, left) and benchmark scores of the 22 models that set it from GPT-4 on (colour by area, right, log-odds)\nFrontier models named along the top with their ECI; ECI axis slope-matched to median benchmark; solid verticals = year starts, dotted = frontier model releases',fontsize=11,y=.99)
 fig.text(0.01,0.005,'Data: Epoch AI processed_data_for_eci.csv + eci_scores.csv (benchmark_data.zip, 1 Oct 2026 snapshot); 0/1 scores pinned to 1%/99%; shaded = 90% CI. CC BY 4.0',fontsize=7.5,color='gray')
 fig.savefig(OUT)

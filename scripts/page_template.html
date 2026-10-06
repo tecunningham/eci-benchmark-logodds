@@ -57,7 +57,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outlin
 <div id="fallback" hidden><p class="lede">The interactive chart could not load here, so this is the static version.</p><img alt="Frontier ECI and benchmark scores chart" style="max-width:100%;height:auto" src="figures/eci_frontier_all.png"></div>
 <div class="notes">
  <p>Data: Epoch AI's own ECI fit input (processed_data_for_eci.csv) and published ECI scores (eci_scores.csv) from benchmark_data.zip, snapshot of 1 Oct 2026, shown from GPT-4 (14 Mar 2023) onward. Each model's lab is the first organisation Epoch lists for it; labs with at least five models in the period can be chosen above. Every score is already floor- and ceiling-adjusted: (raw − random-guess baseline) ÷ (attainable ceiling − baseline), clipped to [0, 1], taking the best version within each model group. Frontier ECI is the running maximum by release date, over all labs or over the chosen lab's models; where several models share a date only the highest counts. <span id="count"></span> ECIs come from Epoch's joint fit over every lab's models (including the few pre-GPT-4 models not shown), so a lab's frontier is directly comparable with the overall one.</p><p>Areas follow the primary domain tag on Epoch's ECI page, grouped into seven: Math; Software engineering (includes Cybench); Agents &amp; computer use; Science; Reasoning &amp; games (conceptual reasoning plus games); Multimodal; Language &amp; knowledge (language understanding, world knowledge, long context, writing). Seven benchmarks have no tag there and were assigned by hand: METR Time Horizons, DeepResearch Bench (agents), LMCA (reasoning), Lech Mazur Writing (language), GeoBench (multimodal), and the two FrontierMath v1 sets (math).</p>
- <p>Solid vertical lines mark the start of each year; dotted lines mark the release of each frontier model. The slope-matched right axis is scaled so a benchmark with the median fitted slope (0.107 logits per ECI point) runs parallel to the ECI line; steeper benchmarks climb faster than it. Scores of exactly 0 or 1 are pinned to 1% and 99%. Data CC BY 4.0, Epoch AI.</p>
+ <p>Solid vertical lines mark the start of each year; dotted lines mark the release of each frontier model. The slope-matched ECI axis is scaled so a benchmark with the median fitted slope (0.107 logits per ECI point) runs parallel to the ECI line; steeper benchmarks climb faster than it. Scores of exactly 0 or 1 are pinned to 1% and 99%. Data CC BY 4.0, Epoch AI.</p>
 </div>
 </main>
 <script>
@@ -82,7 +82,7 @@ function derive(){
  D.eci=F.map(o=>[o.d,o.m,o.e,o.lo,o.hi]);D.alleci=M.filter((o,i)=>mine.has(i)).map(o=>[o.d,o.m,o.e]);D.overall=lab?OV.map(o=>[o.d,o.m,o.e]):null;
  const who=lab?lab+"'s":'',n=F.length;
  document.getElementById('title').textContent=(lab?who+' frontier ECI':'Frontier ECI')+' and the benchmark scores behind it';
- document.getElementById('lede').textContent='Coloured lines are the benchmark scores of the '+n+(lab?' '+lab:'')+' models that set a new '+(lab?lab+' best':'frontier')+' ECI from GPT-4 onward (named along the top), in log-odds (left axis). Colour shows each benchmark’s area; tap an area to isolate it. The thick line is '+(lab?who+' frontier':'frontier')+' ECI itself (right axis), with its 90% interval'+(lab?'; the dashed grey line is the overall frontier across all labs.':'.');
+ document.getElementById('lede').textContent='Coloured lines are the benchmark scores of the '+n+(lab?' '+lab:'')+' models that set a new '+(lab?lab+' best':'frontier')+' ECI from GPT-4 onward (named along the top), in log-odds (right axis). Colour shows each benchmark’s area; tap an area to isolate it. The thick line is '+(lab?who+' frontier':'frontier')+' ECI itself (left axis), with its 90% interval'+(lab?'; the dashed grey line is the overall frontier across all labs.':'.');
  document.getElementById('count').textContent='The '+n+' record-setting models contribute '+nf.toLocaleString()+' of the '+nall.toLocaleString()+' '+(lab?lab+' ':'')+'scores shown, on '+nb+' of the '+B.length+' benchmarks.';
  [...sel.options].forEach(o=>{const d=B.find(x=>x.name===o.value);if(d)o.textContent=d.name+(d.rel?' ('+d.rel.slice(0,4)+')':'')+(d.fr.length?'':' – no record-setting-model scores')});
  document.title=lab?lab+' frontier ECI and benchmark scores':'ECI benchmarks in log-odds, with frontier ECI';
@@ -101,6 +101,9 @@ let view='frontier',ax='aligned',hl='',labels=innerWidth>=640;
 function short(n){return n.replace('FrontierMath-Tiers-1-3-v2-Private','FrontierMath T1–3 v2').replace('FrontierMath-Tier-4-v2-Private','FrontierMath T4 v2')
  .replace('FrontierMath-2025-02-28-Private','FrontierMath T1–3 (v1)').replace('FrontierMath-Tier-4-2025-07-01-Private','FrontierMath T4 (v1)').replace('OTIS Mock AIME 2024-2025','OTIS Mock AIME')}
 const END=RAW.snapshot,DAY=864e5,GUTTER='2026-06-01',GX='2026-10-12';
+// rotated annotations are centred on their anchor, so offset each by half its length to start it at the leader line
+const tctx=document.createElement('canvas').getContext('2d');
+function textW(t,size){tctx.font=size+'px "Public Sans", system-ui, sans-serif';return tctx.measureText(t).width}
 function modelAnns(){
  const el=document.getElementById('plot'),narrow=innerWidth<640;
  const W=Math.max(200,el.clientWidth-(narrow?80:124));
@@ -110,8 +113,8 @@ function modelAnns(){
  it.forEach((o,k)=>{o.lx=o.px;if(k&&o.lx<it[k-1].lx+g)o.lx=it[k-1].lx+g});
  for(let k=it.length-1;k>=0;k--){const cap=k===it.length-1?W-4:it[k+1].lx-g;if(it[k].lx>cap)it[k].lx=cap}
  const mut=css('--muted'),ink=css('--ink');
- return {anns:it.map(o=>({x:o.d,y:1,xref:'x',yref:'paper',ax:o.lx-o.px,ay:-16,axref:'pixel',ayref:'pixel',text:o.m+' ('+o.e.toFixed(1)+')',textangle:-90,
-   xanchor:'center',yanchor:'bottom',showarrow:true,arrowhead:0,arrowwidth:0.7,arrowcolor:mut,standoff:0,font:{size:narrow?9:10.5,color:ink},
+ return {anns:it.map(o=>({x:o.d,y:1,xref:'x',yref:'paper',ax:o.lx-o.px,ay:-16-textW(o.m+' ('+o.e.toFixed(1)+')',narrow?9:10.5)/2,axref:'pixel',ayref:'pixel',text:o.m+' ('+o.e.toFixed(1)+')',textangle:-90,
+   xanchor:'center',yanchor:'middle',showarrow:true,arrowhead:0,arrowwidth:0.7,arrowcolor:mut,standoff:0,font:{size:narrow?9:10.5,color:ink},
    hovertext:o.m+': ECI '+o.e.toFixed(1),captureevents:false})),
   lines:it.map(o=>({type:'line',xref:'x',yref:'paper',x0:o.d,x1:o.d,y0:0,y1:1,line:{color:ink,width:0.8,dash:'dot'},layer:'below',opacity:.32}))};
 }
@@ -174,9 +177,9 @@ function build(){
  const layout={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Public Sans, system-ui, sans-serif',color:ink,size:12},
   margin:{l:narrow?42:62,r:narrow?38:62,t:narrow?175:185,b:40},hovermode:'closest',dragmode:narrow?false:'zoom',
   xaxis:{type:'date',showgrid:false,zeroline:false,dtick:'M12',tick0:'2023-01-01',tickformat:'%Y',ticklabelmode:'period',ticks:'',range:['2023-02-15',labels?'2027-06-15':'2026-10-31'],tickfont:{color:mut}},annotations:(labels?labelAnns():[]).concat(MA.anns),shapes:bandShapes.concat(['2024','2025','2026','2027'].map(y=>({type:'line',xref:'x',yref:'paper',x0:y+'-01-01',x1:y+'-01-01',y0:0,y1:1,line:{color:mut,width:1.4},opacity:.55,layer:'below'}))).concat(MA.lines),
-  yaxis:{title:narrow?null:{text:'Benchmark score (log-odds scale)',font:{color:mut}},range:[-5,5],gridcolor:grid,zeroline:false,
+  yaxis:{title:narrow?null:{text:'Benchmark score (log-odds scale)',font:{color:mut}},side:'right',range:[-5,5],gridcolor:grid,zeroline:false,
    tickvals:pct.map(p=>Math.log(p/(1-p))),ticktext:pct.map(p=>(p*100)+'%'),tickfont:{color:mut}},
-  yaxis2:{title:narrow?null:{text:(lab?lab+' frontier':'Frontier')+' ECI',font:{color:ink}},overlaying:'y',side:'right',range:r2,showgrid:false,zeroline:false,tickfont:{color:ink},dtick:10},
+  yaxis2:{title:narrow?null:{text:(lab?lab+' frontier':'Frontier')+' ECI',font:{color:ink}},overlaying:'y',side:'left',range:r2,showgrid:false,zeroline:false,tickfont:{color:ink},dtick:10},
   hoverlabel:{font:{family:'Public Sans, system-ui, sans-serif'}}};
  Plotly.react('plot',tr,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']});
 }
@@ -188,6 +191,7 @@ sel.onchange=()=>{hl=sel.value;build()};
 ls.onchange=()=>{lab=ls.value;derive();build();try{history.replaceState(null,'',lab?'#lab='+encodeURIComponent(lab):location.pathname+location.search)}catch(e){}};
 addEventListener('hashchange',()=>{lab=fromHash();ls.value=lab;derive();build()});
 build();
+if(document.fonts)document.fonts.ready.then(build);
 const el=document.getElementById('plot');
 el.on('plotly_click',e=>{const n=e.points[0].data.name;if(!n||n==='Frontier ECI'||n.startsWith('trace'))return;hl=(hl===n)?'':n;sel.value=hl;build()});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',build);
