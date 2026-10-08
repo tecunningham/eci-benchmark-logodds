@@ -15,7 +15,7 @@ def short(n):
     return n
 cm=plt.get_cmap('turbo')
 fig,ax=plt.subplots(figsize=(15,11),dpi=150)
-fig.subplots_adjust(left=.06,right=.94,bottom=.06,top=.73)
+fig.subplots_adjust(left=.06,right=.94,bottom=.08,top=.73)
 X0,X1=pd.Timestamp('2023-02-15'),pd.Timestamp('2027-05-01'); ax.set_xlim(X0,X1); ax.set_ylim(-5,5)
 items=[]
 for i,d in enumerate(B):
@@ -60,14 +60,20 @@ for e,v,l in zip(E,px,lxs):
     ax.annotate(f"{e[1]} ({e[2]:.1f})",xy=(xd,1),xycoords=('data','axes fraction'),xytext=(l-v,16),textcoords='offset pixels',rotation=90,ha='center',va='bottom',fontsize=7.5,
         arrowprops=dict(arrowstyle='-',lw=.5,color='gray',shrinkA=0,shrinkB=0))
 ax.legend(handles=[Line2D([0],[0],color=D['cols'][a],lw=3,label=a) for a in D['areas']],loc='lower right',fontsize=8,frameon=True,framealpha=.9,title='Benchmark area',title_fontsize=8)
-a2=ax.twinx(); x=[pd.Timestamp(e[0]) for e in E]+[pd.Timestamp('2026-10-06')]
-y=[e[2] for e in E]; y=y+[y[-1]]
+a2=ax.twinx(); x=[pd.Timestamp(e[0]) for e in E]; y=[e[2] for e in E]  # frontier: straight lines between records
 lo=[e[3] if e[3] is not None else e[2] for e in E]; hi=[e[4] if e[4] is not None else e[2] for e in E]
-a2.fill_between(x,lo+[lo[-1]],hi+[hi[-1]],step='post',color='k',alpha=.1,lw=0)
+a2.fill_between(x,lo,hi,color='k',alpha=.1,lw=0)
 import matplotlib.patheffects as pe
-a2.step(x,y,where='post',color='k',lw=3,path_effects=[pe.Stroke(linewidth=7,foreground='white'),pe.Normal()]); a2.plot(x[:-1],y[:-1],'kD',ms=5,mec='white',mew=1)
+a2.plot(x,y,'k-',lw=3,path_effects=[pe.Stroke(linewidth=7,foreground='white'),pe.Normal()]); a2.plot(x,y,'kD',ms=5,mec='white',mew=1)
+# ECI growth along that line within each calendar year (partial years annualised, starred)
+t=np.array([v.value for v in x],float); yv=np.array(y)
+for yr in [2023,2024,2025,2026]:
+    a,b=max(t[0],pd.Timestamp(f'{yr}-01-01').value),min(t[-1],pd.Timestamp(f'{yr+1}-01-01').value); yrs=(b-a)/(365.25*864e11)
+    if yrs<0.25: continue
+    r=(np.interp(b,t,yv)-np.interp(a,t,yv))/yrs
+    ax.text(pd.Timestamp(f'{yr}-07-02'),-0.055,f"{r:+.1f} pts/yr"+('*' if yrs<0.99 else ''),transform=ax.get_xaxis_transform(),ha='center',va='top',fontsize=9,color='gray' if yrs<0.99 else 'k')
 span=10/0.106875; a2.set_ylim(140-span/2,140+span/2); a2.set_ylabel('Frontier ECI (black)')
 ax.yaxis.tick_right(); ax.yaxis.set_label_position('right'); a2.yaxis.tick_left(); a2.yaxis.set_label_position('left')
 fig.suptitle('Frontier ECI (black, left) and benchmark scores of the 22 models that set it from GPT-4 on (colour by area, right, log-odds)\nFrontier models named along the top with their ECI; ECI axis slope-matched to median benchmark; solid verticals = year starts, dotted = frontier model releases',fontsize=11,y=.99)
-fig.text(0.01,0.005,'Data: Epoch AI processed_data_for_eci.csv + eci_scores.csv (benchmark_data.zip, 1 Oct 2026 snapshot); 0/1 scores pinned to 1%/99%; shaded = 90% CI. CC BY 4.0',fontsize=7.5,color='gray')
+fig.text(0.01,0.005,'Data: Epoch AI processed_data_for_eci.csv + eci_scores.csv (benchmark_data.zip, 1 Oct 2026 snapshot); 0/1 scores pinned to 1%/99%; shaded = 90% CI; under each year, frontier ECI growth along the line (* = part year, annualised). CC BY 4.0',fontsize=7.5,color='gray')
 fig.savefig(OUT)

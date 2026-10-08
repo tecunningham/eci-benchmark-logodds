@@ -2,8 +2,8 @@
 
 Writes
   data/frontier_all.json  frontier across all labs, from GPT-4 on (used by make_figure.py)
-  data/eci_data.json      every model and score from GPT-4 on, tagged by lab; the interactive
-                          page computes the frontier for whichever lab is chosen
+  data/eci_data.json      every model and score in Epoch's fit, tagged by lab, plus raw fit parameters;
+                          the interactive page computes each lab's frontier and can refit ECI
 """
 import json
 from pathlib import Path
@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import eci_fit
 from areas import area, ORDER, COL
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +22,7 @@ B = pd.read_csv(EP / "edi_scores.csv")
 P0["date"] = P0.Model.map(E0.set_index("Model").date)  # use ECI release dates throughout
 EPS = 0.01  # pin 0/1 scores to 1%/99% so log-odds stay finite
 START = pd.Timestamp("2023-03-14")  # GPT-4
+ANCHOR_BENCH = "Winogrande"  # Epoch pins its discriminability to 1
 MIN_MODELS = 5  # labs with fewer models since START are offered only under "All labs"
 rel = B.set_index("benchmark_name").benchmark_release_date
 
@@ -87,28 +89,39 @@ def build_all(E, P):
 
 
 def build_compact(E, P):
-    """Models once, scores as [model index, logit, score]; the page derives each lab's frontier."""
+    """Every model in Epoch's fit (pre-GPT-4 ones flagged by date) and every score as [model index, score],
+    plus our own full refit's raw parameters so the page can warm-start refits on a subset of benchmarks."""
     E = E.sort_values(["date", "eci"]).reset_index(drop=True)
-    idx = {m: i for i, m in enumerate(E.Model)}
-    P = P[P.Model.isin(idx)].copy()
-    P["logit"] = logit(P)
+    names = list(E.Model)
+    idx = {m: i for i, m in enumerate(names)}
     out = []
     for b, g in P.groupby("benchmark"):
         g = g.sort_values("date")
         out.append(dict(name=b, rel=str(rel.get(b, "")) or None, area=area(b),
-                        p=[[idx[m], round(l, 3), round(p, 4)] for m, l, p in zip(g.Model, g.logit, g.performance)]))
+                        p=[[idx[m], round(p, 5)] for m, p in zip(g.Model, g.performance)]))
     out.sort(key=lambda x: (ORDER.index(x["area"]), x["rel"] or "9999"))
-    n = E.lab.value_counts()
+    mi = np.array([q[0] for o in out for q in o["p"]])
+    bi = np.array([k for k, o in enumerate(out) for _ in o["p"]])
+    y = np.array([q[1] for o in out for q in o["p"]])
+    anchor = [o["name"] for o in out].index(ANCHOR_BENCH)
+    cap, dif, dis = eci_fit.fit(y, mi, bi, len(names), len(out), anchor)
+    a, sc = eci_fit.to_eci(cap, names)
+    print(f"own full fit vs published ECI: max |diff| {np.abs(a + sc * cap - E.eci.values).max():.3f}")
+    n = E[E.date >= START].lab.value_counts()
     return dict(
         models=[[m, l, d.strftime("%Y-%m-%d"), round(e, 2), nn(lo), nn(hi)]
                 for m, l, d, e, lo, hi in zip(E.Model, E.lab, E.date, E.eci, E.eci_ci_low, E.eci_ci_high)],
         labs=sorted([l for l in n[n >= MIN_MODELS].index if l != "Other"], key=lambda l: -n[l]),
         b=out, areas=ORDER, cols=COL, start=START.strftime("%Y-%m-%d"), snapshot="2026-10-01",
+        slope=float(B.estimated_slope_scaled.median()),
+        fit=dict(anchor=ANCHOR_BENCH, low=list(eci_fit.ANCHOR_LOW), high=list(eci_fit.ANCHOR_HIGH),
+                 reg=eci_fit.REG, clip=eci_fit.CLIP,
+                 cap=[round(v, 6) for v in cap], dif=[round(v, 6) for v in dif], dis=[round(v, 6) for v in dis]),
     )
 
 
 if __name__ == "__main__":
     E, P = E0[E0.date >= START], P0[P0.date >= START]
     json.dump(build_all(E, P), open(ROOT / "data" / "frontier_all.json", "w"), separators=(",", ":"))
-    json.dump(build_compact(E, P), open(ROOT / "data" / "eci_data.json", "w"), separators=(",", ":"))
+    json.dump(build_compact(E0, P0), open(ROOT / "data" / "eci_data.json", "w"), separators=(",", ":"))
     print("wrote data/frontier_all.json, data/eci_data.json")
