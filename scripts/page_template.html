@@ -67,17 +67,17 @@ details.fit summary b{font-weight:600}
  <label>Highlight <select id="hl"><option value="">All benchmarks</option></select></label>
 </div>
 <div class="legend" id="legend" role="group" aria-label="Benchmark area; choose one to isolate it"></div>
+<div id="plot"></div>
+<div id="fallback" hidden><p class="lede">The interactive chart could not load here, so this is the static version.</p><img alt="Frontier ECI and benchmark scores chart" style="max-width:100%;height:auto" src="figures/eci_frontier_all.png"></div>
 <details class="fit" id="fitbox"><summary><b>Benchmarks in the ECI fit:</b> <span id="fitstat"></span></summary>
  <p id="fitmsg"></p>
  <div class="fitbar"><button type="button" data-fit="all">All (Epoch's published ECI)</button><button type="button" data-fit="since2023">Only benchmarks released since 2023</button><button type="button" data-fit="none">Clear</button></div>
  <div class="fitgrid" id="fitgrid"></div>
 </details>
-<div id="plot"></div>
-<div id="fallback" hidden><p class="lede">The interactive chart could not load here, so this is the static version.</p><img alt="Frontier ECI and benchmark scores chart" style="max-width:100%;height:auto" src="figures/eci_frontier_all.png"></div>
 <div class="notes">
  <p>Data: Epoch AI's own ECI fit input (processed_data_for_eci.csv) and published ECI scores (eci_scores.csv) from benchmark_data.zip, snapshot of 1 Oct 2026, shown from GPT-4 (14 Mar 2023) onward. Each model's lab is the first organisation Epoch lists for it; labs with at least five models in the period can be chosen above. Every score is already floor- and ceiling-adjusted: (raw − random-guess baseline) ÷ (attainable ceiling − baseline), clipped to [0, 1], taking the best version within each model group. Frontier ECI is the running maximum by release date, over all labs or over the chosen lab's models; where several models share a date only the highest counts. <span id="count"></span> ECIs come from Epoch's joint fit over every lab's models (including the few pre-GPT-4 models not shown), so a lab's frontier is directly comparable with the overall one.</p><p>Areas follow the primary domain tag on Epoch's ECI page, grouped into seven: Math; Software engineering (includes Cybench); Agents &amp; computer use; Science; Reasoning &amp; games (conceptual reasoning plus games); Multimodal; Language &amp; knowledge (language understanding, world knowledge, long context, writing). Seven benchmarks have no tag there and were assigned by hand: METR Time Horizons, DeepResearch Bench (agents), LMCA (reasoning), Lech Mazur Writing (language), GeoBench (multimodal), and the two FrontierMath v1 sets (math).</p>
  <p>Solid vertical lines mark the start of each year; dotted lines mark the release of each frontier model. The frontier line joins successive records with straight lines, and the figure under each year is the rise along that line between 1 January and 31 December, in ECI points; a starred figure covers only part of the year (from the first record, or to the latest) and is annualised. The slope-matched ECI axis is scaled so a benchmark with the median fitted slope (<span id="slope"></span> logits per ECI point) runs parallel to the ECI line; steeper benchmarks climb faster than it.</p>
- <p>Refitting: untick benchmarks under “Benchmarks in the ECI fit” and ECI is re-estimated in your browser on the rest, using Epoch's model and objective (open-source <a href="https://github.com/epoch-research/eci-public">eci-public</a>): score = sigmoid(slope × (capability − difficulty)), least squares with the same L2 penalty, scaled so Claude 3.5 Sonnet = 130 and GPT-5 = 150. With all benchmarks ticked the chart shows Epoch's published numbers; this solver reproduces them to within 0.06 points. Refits have no intervals, since Epoch's come from 500 bootstrap refits. Unticked benchmarks are also hidden from the chart. The link records the lab and any dropped benchmarks, so a refit can be shared. Scores of exactly 0 or 1 are pinned to 1% and 99%. Data CC BY 4.0, Epoch AI.</p>
+ <p>Refitting: untick benchmarks under “Benchmarks in the ECI fit” and ECI is re-estimated in your browser on the rest, using Epoch's model and objective (open-source <a href="https://github.com/epoch-research/eci-public">eci-public</a>): score = sigmoid(slope × (capability − difficulty)), least squares with the same L2 penalty, scaled so Claude 3.5 Sonnet = 130 and GPT-5 = 150. With all benchmarks ticked the chart shows Epoch's published numbers; this solver reproduces them to within 0.06 points. Refits have no intervals, since Epoch's come from 500 bootstrap refits. Unticked benchmarks stay on the chart as faded dotted lines, and Epoch's published frontier is drawn faded behind the refitted one. The link records the lab and any dropped benchmarks, so a refit can be shared. Scores of exactly 0 or 1 are pinned to 1% and 99%. Data CC BY 4.0, Epoch AI.</p>
 </div>
 </main>
 <script>
@@ -112,12 +112,15 @@ function derive(){
  const mine=new Set(M.map((o,i)=>i).filter(i=>M[i].shown&&Number.isFinite(M[i].e)&&(!lab||M[i].l===lab))),F=frontier(M.filter((o,i)=>mine.has(i))),fs=new Set(F);
  const pt=(i,q)=>[M[i].d,q[1],q[2],M[i].m];
  let nf=0,nall=0,nb=0;
- B.forEach(d=>{d.fr=[];d.all=[];if(!d.on)return;d.p.forEach(q=>{if(!mine.has(q[0]))return;nall++;if(fs.has(M[q[0]])){d.fr.push(pt(q[0],q));nf++}else d.all.push(pt(q[0],q))});if(d.fr.length)nb++});
+ // benchmarks left out of the fit are still drawn (faded) but not counted
+ B.forEach(d=>{d.fr=[];d.all=[];d.p.forEach(q=>{if(!mine.has(q[0]))return;if(d.on)nall++;if(fs.has(M[q[0]])){d.fr.push(pt(q[0],q));if(d.on)nf++}else d.all.push(pt(q[0],q))});if(d.on&&d.fr.length)nb++});
  D.eci=F.map(o=>[o.d,o.m,o.e,o.lo,o.hi]);D.alleci=M.filter((o,i)=>mine.has(i)).map(o=>[o.d,o.m,o.e]);D.overall=lab?OV.map(o=>[o.d,o.m,o.e]):null;
+ // Epoch's published frontier for the same lab, drawn faded under a refit
+ D.canon=refit?frontier(M.filter(o=>o.shown&&(!lab||o.l===lab)).map(o=>({d:o.d,m:o.m,e:o.pub}))).map(o=>[o.d,o.m,o.e]):null;
  D.growth=growth(D.eci);
  const who=lab?lab+"'s":'',n=F.length,non=B.filter(d=>d.on).length;
  document.getElementById('title').textContent=(lab?who+' frontier ECI':'Frontier ECI')+' and the benchmark scores behind it';
- document.getElementById('lede').textContent='Coloured lines are the benchmark scores of the '+n+(lab?' '+lab:'')+' models that set a new '+(lab?lab+' best':'frontier')+' ECI from GPT-4 onward (named along the top), in log-odds (right axis). Colour shows each benchmark’s area; tap an area to isolate it. The thick line is '+(lab?who+' frontier':'frontier')+' ECI itself (left axis), joining successive records'+(refit?'':', with its 90% interval')+'; the figure under each year is how many ECI points it rose that year'+(lab?'. The dashed grey line is the overall frontier across all labs.':'.')+(refit?' ECI here is refitted on '+non+' of the '+B.length+' benchmarks (see below).':'');
+ document.getElementById('lede').textContent='Coloured lines are the benchmark scores of the '+n+(lab?' '+lab:'')+' models that set a new '+(lab?lab+' best':'frontier')+' ECI from GPT-4 onward (named along the top), in log-odds (right axis). Colour shows each benchmark’s area; tap an area to isolate it. The thick line is '+(lab?who+' frontier':'frontier')+' ECI itself (left axis), joining successive records'+(refit?'':', with its 90% interval')+'; the figure under each year is how many ECI points it rose that year'+(lab?'. The dashed grey line is the overall frontier across all labs.':'.')+(refit?' ECI here is refitted on '+non+' of the '+B.length+' benchmarks (chosen below the chart); the faded black line is Epoch\u2019s published frontier, and dotted faded lines are benchmarks left out of the fit.':'');
  document.getElementById('count').textContent='The '+n+' record-setting models contribute '+nf.toLocaleString()+' of the '+nall.toLocaleString()+' '+(lab?lab+' ':'')+'scores shown, on '+nb+' of the '+non+' benchmarks'+(refit?' in the refit':'')+'.';
  document.getElementById('slope').textContent=slope.toFixed(3);
  [...sel.options].forEach(o=>{const d=B.find(x=>x.name===o.value);if(d)o.textContent=d.name+(d.rel?' ('+d.rel.slice(0,4)+')':'')+(!d.on?' – not in fit':d.fr.length?'':' – no record-setting-model scores')});
@@ -212,7 +215,7 @@ function labelAnns(){
  const H=Math.max(200,el.clientHeight-(innerWidth<640?235:245)),W=Math.max(200,el.clientWidth-(narrow?80:124));
  const x0=+new Date('2023-02-15'),x1=+new Date('2027-06-15');const msPx=(x1-x0)/W, lPx=10/H;
  const fs=10,g=(fs+2.5)*lPx,charPx=fs*0.62;
- const items=B.filter(d=>d.fr.length&&(!hl||hl===d.name)&&(!ha||ha===d.area)).map(d=>{const e=d.fr[d.fr.length-1];return{d,ex:e[0],ey:e[1],txt:short(d.name)}});
+ const items=B.filter(d=>d.fr.length&&(d.on||hl===d.name)&&(!hl||hl===d.name)&&(!ha||ha===d.area)).map(d=>{const e=d.fr[d.fr.length-1];return{d,ex:e[0],ey:e[1],txt:short(d.name)}});
  const gut=items.filter(i=>i.ex>=GUTTER).sort((a,b)=>a.ey-b.ey);
  // 1D spread in the right gutter, kept inside [-4.9,4.9]
  gut.forEach((it,k)=>{it.ly=it.ey;if(k&&it.ly<gut[k-1].ly+g)it.ly=gut[k-1].ly+g});
@@ -235,13 +238,13 @@ const esc=s=>s.replace(/%/g,'%%');
 function build(){
  const tr=[];
  B.forEach(d=>{
-  const on=(!hl||hl===d.name)&&(!ha||ha===d.area), op=on?1:0.07, big=hl===d.name;
-  const ht='<b>%{customdata[0]}</b><br>'+esc(d.name)+'<br>%{customdata[1]}, %{x|%b %Y}<extra></extra>';
+  const on=(!hl||hl===d.name)&&(!ha||ha===d.area), op=on?(d.on||hl===d.name?1:0.22):0.07, big=hl===d.name;
+  const ht='<b>%{customdata[0]}</b><br>'+esc(d.name)+(d.on?'':' (not in fit)')+'<br>%{customdata[1]}, %{x|%b %Y}<extra></extra>';
   if(view==='all'&&d.all.length) tr.push({x:d.all.map(p=>p[0]),y:d.all.map(p=>p[1]),customdata:d.all.map(p=>[p[3],(p[2]*100).toFixed(1)+'%']),
    type:'scatter',mode:'markers',name:d.name,showlegend:false,marker:{color:d.col,size:4,opacity:0.3*op},hovertemplate:ht});
   if(d.fr.length) tr.push({x:d.fr.map(p=>p[0]),y:d.fr.map(p=>p[1]),customdata:d.fr.map(p=>[p[3],(p[2]*100).toFixed(1)+'%']),
    type:'scatter',mode:'lines+markers',name:d.name,showlegend:false,opacity:op,
-   line:{color:d.col,width:big?3.2:1.9},marker:{color:d.col,size:big?7.5:5.5,line:{color:css('--bg'),width:1}},hovertemplate:ht});
+   line:{color:d.col,width:big?3.2:d.on?1.9:1.4,dash:d.on?'solid':'dot'},marker:{color:d.col,size:big?7.5:5.5,line:{color:css('--bg'),width:1}},hovertemplate:ht});
  });
  const E=D.eci,eciC=css('--eci'),band=css('--band');
  // 90% band between successive records (published fit only; refits have no intervals)
@@ -249,6 +252,7 @@ function build(){
   tr.push({x:E.map(e=>e[0]),y:E.map(e=>e[3]??e[2]),yaxis:'y2',type:'scatter',mode:'lines',line:{width:0},fill:'tonexty',fillcolor:band,hoverinfo:'skip',showlegend:false})}
  if(view==='all') tr.push({x:D.alleci.map(e=>e[0]),y:D.alleci.map(e=>e[2]),customdata:D.alleci.map(e=>e[1]),yaxis:'y2',type:'scatter',mode:'markers',
    marker:{symbol:'diamond-open',size:5,color:eciC,opacity:.35},showlegend:false,hovertemplate:'<b>%{customdata}</b><br>ECI %{y:.1f}<extra></extra>'});
+ if(D.canon)tr.push({x:D.canon.map(o=>o[0]),y:D.canon.map(o=>o[2]),customdata:D.canon.map(o=>o[1]),yaxis:'y2',type:'scatter',mode:'lines+markers',opacity:.3,line:{color:eciC,width:3},marker:{size:6,color:eciC,symbol:'diamond'},name:'Published frontier',showlegend:false,hovertemplate:'<b>%{customdata}</b><br>Published (Epoch) '+(lab?lab+' ':'')+'frontier ECI %{y:.1f}<extra></extra>'});
  if(D.overall){const OVd=D.overall;tr.push({x:OVd.map(o=>o[0]),y:OVd.map(o=>o[2]),customdata:OVd.map(o=>o[1]),yaxis:'y2',type:'scatter',mode:'lines',line:{color:css('--muted'),width:1.5,dash:'dash'},name:'Overall frontier',showlegend:false,hovertemplate:'Overall frontier ECI %{y:.1f}<br>%{customdata}<extra></extra>'})}
  tr.push({x:E.map(e=>e[0]),y:E.map(e=>e[2]),yaxis:'y2',type:'scatter',mode:'lines',line:{color:css('--bg'),width:8},hoverinfo:'skip',showlegend:false});
  tr.push({x:E.map(e=>e[0]),y:E.map(e=>e[2]),customdata:E.map(e=>[e[1],refit?'refit, no interval':!Number.isFinite(e[3])?'anchor':'90%: '+e[3].toFixed(1)+' to '+e[4].toFixed(1)]),yaxis:'y2',type:'scatter',mode:'lines+markers',
@@ -256,7 +260,7 @@ function build(){
   hovertemplate:'<b>%{customdata[0]}</b><br>'+(lab?lab+' frontier':'Frontier')+' ECI %{y:.1f} (%{customdata[1]})<extra></extra>'});
  const ink=css('--ink'),mut=css('--muted'),grid=css('--grid');const narrow=innerWidth<640;const MA=modelAnns();
  // aligned: log-odds axis spans 10 logits; ECI axis spans 10/(median slope) points, ECI 140 at logit 0
- const span=10/slope, fv=E.flatMap(e=>[e[3]??e[2],e[4]??e[2]]).concat(view==='all'?D.alleci.map(e=>e[2]):[]),
+ const span=10/slope, fv=E.flatMap(e=>[e[3]??e[2],e[4]??e[2]]).concat(view==='all'?D.alleci.map(e=>e[2]):[],D.canon?D.canon.map(o=>o[2]):[]),
   r2=ax==='aligned'?[140-span/2,140+span/2]:[Math.floor(Math.min(...fv)/5)*5-3,Math.ceil(Math.max(...fv)/5)*5+3];
  const layout={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Public Sans, system-ui, sans-serif',color:ink,size:12},
   margin:{l:narrow?42:62,r:narrow?38:62,t:narrow?175:185,b:62},hovermode:'closest',dragmode:narrow?false:'zoom',
@@ -277,7 +281,7 @@ addEventListener('hashchange',()=>{readHash();changed(true)});
 readHash();changed(true);
 if(document.fonts)document.fonts.ready.then(build);
 const el=document.getElementById('plot');
-el.on('plotly_click',e=>{const n=e.points[0].data.name;if(!n||n==='Frontier ECI'||n==='Overall frontier'||n.startsWith('trace'))return;hl=(hl===n)?'':n;sel.value=hl;build()});
+el.on('plotly_click',e=>{const n=e.points[0].data.name;if(!n||n==='Frontier ECI'||n==='Overall frontier'||n==='Published frontier'||n.startsWith('trace'))return;hl=(hl===n)?'':n;sel.value=hl;build()});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',build);
 }catch(err){console.error(err);showFallback()}
 </script></body></html>

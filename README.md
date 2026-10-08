@@ -46,6 +46,7 @@ Winogrande's slope is pinned at 1 to fix the raw scale, and the result is mapped
 - **With every benchmark ticked**, the page shows Epoch's published ECI and 90% intervals. Our own full fit reproduces the published values to within 0.06 points. scipy stops at its default tolerance, while this solver goes on to a slightly lower objective, and the leftover differences are in models with few scores.
 - **Without Winogrande**, the benchmark with the most scores is pinned instead, at its slope from the full fit.
 - **Dropped models.** A model with no scores left drops out. The two anchor models must keep at least one score.
+- **On the chart.** Unticked benchmarks stay visible as faded dotted lines, and the published frontier is drawn faded behind the refitted one.
 - **No intervals for refits.** Epoch's intervals come from 500 bootstrap refits, which the page doesn't run.
 - **Median slope.** The slope-matched axis uses the median slope of the refit.
 
