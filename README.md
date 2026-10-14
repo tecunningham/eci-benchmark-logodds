@@ -14,6 +14,46 @@ so on a log-odds scale every benchmark should rise linearly with ECI. These char
 - **Top:** the 22 record-setting models from GPT-4 (Mar 2023) on, with their ECI.
 - **Under each year:** how many ECI points the frontier line rose between 1 January and 31 December. Starred years are only partly covered (from the first record, or up to the latest one) and are annualised.
 
+## Nonparametric version
+
+![Each benchmark's free monotone curve vs the best sigmoid](figures/npca_curves.png)
+
+**Interactive:** https://tecunningham.github.io/eci-benchmark-logodds/npca.html (source [`npca.html`](npca.html)).
+
+ECI is a rank-1 logistic PCA of the model × benchmark matrix. [`scripts/npca_fit.py`](scripts/npca_fit.py) relaxes it in two ways:
+
+    score_mb = g_b(u_m · dir_b),   g_b nondecreasing,   dir_b = (cos α_b, sin α_b)
+
+- **Monotone link.** Each benchmark's curve `g_b` can take any monotone shape. It is piecewise linear with nonnegative rises, fit by NNLS, penalised for curvature and shrunk towards that benchmark's own sigmoid. The penalties are chosen by 5-fold CV.
+- **Two factors.** Each model is a point in the plane and each benchmark a direction.
+
+All four combinations of sigmoid or monotone curve, with one or two factors, are fit with ECI's squared-error objective and compared on held-out scores:
+- **Random:** 5-fold over cells.
+- **Forward:** curves are fit on models released before Sep 2025; each later model is placed from half of its scores and the other half are predicted.
+
+Results (RMSE in score units):
+
+| Fit | In-sample | Random CV | Forward CV |
+|---|---|---|---|
+| ECI (Epoch's code) | — | 0.0945 | — |
+| 1 factor, sigmoid | 0.0748 | 0.0942 | 0.1793 |
+| 1 factor, monotone | 0.0720 | 0.0929 | 0.1776 |
+| 2 factors, sigmoid | 0.0612 | 0.0952 | 0.1799 |
+| 2 factors, monotone | 0.0588 | 0.0936 | 0.1797 |
+
+- **Free curves help a little.** They cut held-out error by about 1.4%. The best curves stay close to the sigmoid, so the sigmoid is a good approximation.
+- **A second factor cuts in-sample error a lot, but not held-out error.** With a median of 9 scores per model, the data don't support a second dimension.
+- **Only the ordering of models is identified.** With a free monotone curve, the spacing between models (and so the *speed* of progress) comes from the sigmoid assumption. The page's last chart shows how much the measured frontier would change if each benchmark's own curve set the scale.
+
+Rebuild (about 15 minutes on 4 cores; also needs `scipy`):
+
+```bash
+cd scripts
+python npca_build.py        # fits, CV, bootstrap -> data/npca.json
+python npca_figure.py       # -> figures/npca_curves.png
+python npca_build_page.py   # npca_page_template.html + npca.json -> ../npca.html
+```
+
 ## Data
 
 `data/epoch/` holds three files from Epoch's [`benchmark_data.zip`](https://epoch.ai/data/benchmark_data.zip), snapshot of 1 Oct 2026:
