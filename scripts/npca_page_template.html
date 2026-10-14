@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nonparametric ECI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-strict-dist-min@2.35.2/plotly-strict.min.js"></script>
+<style>
+:root{box-sizing:border-box;
+ --bg:#fbfbf8;--ink:#1d2433;--muted:#5d6577;--faint:#9aa1af;--grid:#e3e5ea;--panel:#ffffff;--line:#d4d7de;--accent:#2f5bd3;--ref:#1d2433;--band:rgba(29,36,51,.10);--neg:#2f5bd3;--pos:#d9480f;--mid:#eceef2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151c;--ink:#e6e8ee;--muted:#9aa2b3;--faint:#5f6778;--grid:#262b36;--panel:#181c25;--line:#323846;--accent:#8fb0ff;--ref:#e6e8ee;--band:rgba(230,232,238,.12);--neg:#7fa2ff;--pos:#ff8a4c;--mid:#252a35}}
+:root[data-theme="dark"]{--bg:#12151c;--ink:#e6e8ee;--muted:#9aa2b3;--faint:#5f6778;--grid:#262b36;--panel:#181c25;--line:#323846;--accent:#8fb0ff;--ref:#e6e8ee;--band:rgba(230,232,238,.12);--neg:#7fa2ff;--pos:#ff8a4c;--mid:#252a35}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 40px}
+h1{font:500 clamp(1.5rem,3.6vw,2.1rem)/1.2 "Newsreader",Georgia,serif;margin:4px 0 6px}
+h2{font:500 1.35rem/1.25 "Newsreader",Georgia,serif;margin:34px 0 4px;padding-top:14px;border-top:1px solid var(--line)}
+p{max-width:78ch}
+p.lede,.sub{color:var(--muted)}
+.sub{margin:0 0 10px;font-size:14px}
+a{color:var(--accent)}
+code{font-size:13px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;margin:6px 0 4px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:14px 0 4px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.tile .k{font-size:13px;color:var(--muted)}
+.tile .v{font:500 1.6rem/1.2 "Newsreader",Georgia,serif}
+.tile .v small{font:13px "Public Sans",system-ui,sans-serif;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:8px 0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:13.5px;padding:5px 11px;border:0;background:var(--panel);color:var(--ink);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.ctl-label{font-size:13px;color:var(--muted)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);margin:4px 0 8px;align-items:center}
+.legend .sw{width:12px;height:12px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:5px}
+.legend .ln{display:inline-block;width:22px;height:0;border-top:2px solid var(--ink);vertical-align:3px;margin-right:5px}
+.legend .ln.dash{border-top:2px dashed var(--ref)}
+.legend .bd{display:inline-block;width:22px;height:10px;background:var(--band);vertical-align:-1px;margin-right:5px;border-radius:2px}
+.areahead{grid-column:1/-1;font-size:13px;font-weight:600;margin:8px 0 -2px;display:flex;align-items:center;gap:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 6px 2px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.panel:hover{border-color:var(--faint)}
+.panel[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.panel .t{font-size:12.5px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel .m{font-size:11.5px;color:var(--muted);line-height:1.3}
+.panel svg{display:block;width:100%;height:auto}
+.detail{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:12px;margin:10px 0 14px}
+@media (max-width:820px){.detail{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px}
+.card h3{font-size:14px;margin:2px 4px 2px}
+.card .sub{margin:0 4px 4px;font-size:12.5px}
+.plot{width:100%}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.notes{color:var(--muted);font-size:13.5px}
+.notes p{margin:8px 0}
+table.cv{border-collapse:collapse;font-size:13px;margin:6px 0}
+table.cv td,table.cv th{padding:3px 10px;border-bottom:1px solid var(--line);text-align:right}
+table.cv td:first-child,table.cv th:first-child{text-align:left}
+</style></head>
+<body><main>
+<h1>Nonparametric ECI: does the sigmoid hold, and is one number enough?</h1>
+<p class="lede">Epoch's Capabilities Index is a one-factor <b>logistic</b> PCA of the model × benchmark score matrix: every benchmark score is assumed to be <i>sigmoid(slope × (capability − difficulty))</i>. Here that assumption is relaxed in two directions. First, each benchmark gets its own <b>monotone curve</b> of capability, of any shape. Second, models get <b>two coordinates</b> instead of one, and each benchmark measures progress along its own direction. Both models are fit to the same scores and the same squared-error objective as ECI, and compared on held-out scores.</p>
+<nav class="toc"><a href="#curves">Benchmark curves</a><a href="#bend">All curves vs the sigmoid</a><a href="#cv">Held-out error</a><a href="#map">Two-dimensional map</a><a href="#rank">Ranks</a><a href="#resid">Residuals</a><a href="#frontier">Frontier by benchmark</a><a href="#method">Method</a><a href="index.html">← log-odds page</a></nav>
+<div class="tiles" id="tiles"></div>
+
+<h2 id="curves">Each benchmark's curve, free shape vs sigmoid</h2>
+<p class="sub">Each panel shows one benchmark's scores against model capability θ from the one-factor nonparametric fit. The solid line is that benchmark's monotone curve, with a bootstrap 80% band. The dashed line is the best sigmoid on the same θ, which is the shape ECI assumes. Curves are drawn solid only where the benchmark has scores. Under each name, the held-out (5-fold) error of the sigmoid → the free curve. Click a panel for detail. <b>CV-tuned</b> curves use the penalties that predict held-out scores best, and they end up close to the sigmoid. <b>Lightly penalised</b> curves show where the scores alone would pull each curve. They overfit (held-out RMSE about 0.0955) but are the better diagnostic for <i>where</i> a benchmark departs from the ECI shape.</p>
+<div class="controls">
+ <span class="ctl-label">Y axis</span><div class="seg" data-ctl="yax"><button data-v="score" aria-pressed="true">Score</button><button data-v="logit" aria-pressed="false">Log-odds</button><button data-v="resid" aria-pressed="false">Sigmoid residuals</button></div>
+ <span class="ctl-label">Free curve</span><div class="seg" data-ctl="cm"><button data-v="g1" aria-pressed="true">CV-tuned</button><button data-v="g1w" aria-pressed="false">Lightly penalised</button></div>
+ <span class="ctl-label">Order</span><div class="seg" data-ctl="order"><button data-v="area" aria-pressed="true">Area</button><button data-v="gain" aria-pressed="false">Held-out gain</button><button data-v="n" aria-pressed="false">Scores</button></div>
+</div>
+<div class="legend" id="curvelegend"></div>
+<div class="detail">
+ <div class="card"><h3 id="dtitle"></h3><p class="sub" id="dsub"></p><div id="dplot" class="plot" style="height:400px"></div></div>
+ <div class="card"><h3>Residuals of each fit</h3><p class="sub">Score minus prediction, out of fold. A pattern in the sigmoid's residuals that the free curve removes is real misfit. Scatter that both share is noise.</p><div id="rplot" class="plot" style="height:400px"></div></div>
+</div>
+<div class="grid" id="grid"></div>
+
+<h2 id="bend">All 60 curves against the sigmoid</h2>
+<p class="sub">Each benchmark's free curve is redrawn in its own sigmoid's units. x = slope × (θ − midpoint), the sigmoid's own log-odds. y = how far the free curve's log-odds sit above (+) or below (−) that sigmoid. ECI's assumption is the zero line for <i>every</i> benchmark. A curve that rises at the right is steeper at the top than a sigmoid, and one that dips at the left starts slower. Curves are drawn only where the benchmark has scores and the fit is between 1% and 99%. The curve switch above (CV-tuned / lightly penalised) applies here too. Click an area in the legend to hide it.</p>
+<div id="bendplot" class="plot" style="height:560px"></div>
+
+<h2 id="cv">Held-out error</h2>
+<p class="sub">Root-mean-square error in score units (0–1), on scores the fit never saw. <b>Random:</b> 5-fold over cells, each model keeping at least 3 training scores. <b>Forward:</b> curves are fit only on models released before <span class="cut"></span>. Each later model is placed using half of its scores, and the other half are predicted, so this tests extrapolation into a capability range the curves haven't seen. Bars are 90% intervals from resampling models.</p>
+<div class="two"><div id="cvr" class="plot" style="height:260px"></div><div id="cvf" class="plot" style="height:260px"></div></div>
+<div id="cvtable"></div>
+
+<h2 id="map">Two dimensions: models as points, benchmarks as directions</h2>
+<p class="sub">In the two-factor model, each model is a point and each benchmark a direction. A benchmark's score rises, along its own monotone curve, with a model's projection onto that direction. Axis 1 is on the ECI scale (Claude 3.5 Sonnet = 130, GPT-5 = 150). Axis 2 is in the same units and centred at 0. Colour is release date. Rays show the benchmark directions, and the strip on the right lists their angles. <b id="mapwarn"></b></p>
+<div class="controls"><span class="ctl-label">Curves</span><div class="seg" data-ctl="mapv"><button data-v="k2_monotone" aria-pressed="true">Monotone</button><button data-v="k2_logistic" aria-pressed="false">Sigmoid</button></div>
+<span class="ctl-label">Labels</span><div class="seg" data-ctl="maplab"><button data-v="extreme" aria-pressed="true">Axis-2 extremes</button><button data-v="frontier" aria-pressed="false">Frontier models</button><button data-v="none" aria-pressed="false">None</button></div></div>
+<div class="detail"><div class="card"><div id="mapplot" class="plot" style="height:600px"></div></div><div class="card"><div id="angplot" class="plot" style="height:820px"></div></div></div>
+
+<h2 id="rank">Does the ranking change?</h2>
+<p class="sub">Each model's capability in the one-factor nonparametric fit (θ) against its published ECI. Points on the diagonal are placed the same by both, and the largest movers are labelled. With a free monotone curve only the ordering on this axis is identified. Its spacing comes from the ECI starting point and the two anchors (see method).</p>
+<div class="card"><div id="rankplot" class="plot" style="height:520px"></div></div>
+
+<h2 id="resid">What one factor leaves over</h2>
+<p class="sub">Residuals (score − in-sample fit) for every scored cell. Benchmarks are rows, sorted by the capability at which their curve crosses 50%. Models are columns, sorted by θ. Orange = scored higher than predicted, blue = lower, blank = not scored. A block of one colour is structure a single factor can't explain. Switch to the two-factor fit to see how much of it a second axis absorbs.</p>
+<div class="controls"><span class="ctl-label">Fit</span><div class="seg" data-ctl="resv"><button data-v="1" aria-pressed="true">One factor, monotone</button><button data-v="3" aria-pressed="false">Two factors, monotone</button><button data-v="0" aria-pressed="false">One factor, sigmoid</button></div></div>
+<div class="card"><div id="heat" class="plot" style="height:760px"></div></div>
+
+<h2 id="frontier">The frontier, measured on each benchmark's own curve</h2>
+<p class="sub">The thick line is frontier θ (running best by release date, from GPT-4 on). Each thin line reads the same frontier models off one benchmark's free curve and converts back to capability as if that curve were a sigmoid: midpoint + log-odds ÷ slope. If ECI's sigmoid were exactly right, every thin line would lie on the thick one. Where they fan out, the measured rate of progress depends on which benchmark's scale you trust. Lines are drawn only where the frontier is inside a benchmark's scored range and the curve is between 2% and 98%, since inverting a saturated curve is meaningless. The curve switch in the first section applies here too.</p>
+<div class="card"><div id="frplot" class="plot" style="height:520px"></div></div>
+
+<h2 id="method">Method</h2>
+<div class="notes" id="notes">
+<p><b>Model.</b> score<sub>mb</sub> = g<sub>b</sub>(u<sub>m</sub> · d<sub>b</sub>), where u<sub>m</sub> is a model's position (one or two coordinates), d<sub>b</sub> = (cos α<sub>b</sub>, sin α<sub>b</sub>) a benchmark's direction (|α| ≤ 70°, softly shrunk towards 0), and g<sub>b</sub> a nondecreasing curve. A <i>sigmoid</i> g<sub>b</sub> with one factor is ECI. A <i>monotone</i> g<sub>b</sub> is piecewise linear on <span class="nk"></span> knots with nonnegative rises, fit by nonnegative least squares. It is penalised for changes in slope and shrunk towards that benchmark's own best sigmoid, so a benchmark with few scores stays close to the ECI shape and one with many can bend.</p>
+<p><b>Fitting.</b> Same objective as Epoch's: squared error in score space over the 2,844 scored cells, plus penalties. The curve penalties (smoothness <span class="lsm"></span>, shrinkage <span class="lsh"></span>) and the two-factor priors (axis-2 sd, angle sd) were chosen by 5-fold CV on the same folds reported above. That makes the tuned fits' random-CV errors slightly optimistic, but the forward test was not used for tuning. Fitting alternates three steps until the error stops falling: refit each curve; for two factors, choose each benchmark's angle by grid search; place each model by coarse-to-fine grid search, with a weak prior. Positions are re-anchored after each pass so Claude 3.5 Sonnet = 130 and GPT-5 = 150 on axis 1. Every fit, including those inside cross-validation, starts from Epoch's ECI refit on that fit's own training scores (<code>scripts/eci_fit.py</code>), so no held-out score enters through the starting point. The one-factor sigmoid fit reproduces Epoch's in-sample error to within 0.3%.</p>
+<p><b>What is identified.</b> With a free monotone curve and one factor, any monotone stretch of the capability axis can be absorbed into the curves. The data then pin down only the <i>order</i> of models, not the distances between them. Here the spacing is inherited from the ECI start and the anchors. Claims about the <i>speed</i> of progress therefore rest on the sigmoid assumption. The last chart shows how much they would change if each benchmark's own curve defined the scale. With two factors, the requirement that every direction's projection works through one curve constrains the plane much more tightly.</p>
+<p><b>Uncertainty.</b> Bands on the curves are the 10th–90th percentiles over <span class="nb"></span> refits on models resampled with replacement (the two anchor models always kept). Intervals on held-out error come from resampling models.</p>
+<p><b>Not done here.</b> A Gaussian-copula (rank-likelihood) factor model would give a fully Bayesian version and handle tied 0/1 scores formally. Three or more factors are not fit: with a median of 9 scores per model, two is already a lot to ask. Code: <code>scripts/npca_fit.py</code> (model), <code>scripts/npca_build.py</code> (fits, CV, bootstrap → <code>data/npca.json</code>), <code>scripts/npca_build_page.py</code>. Data: Epoch AI, CC BY 4.0, snapshot of 1 Oct 2026.</p>
+</div>
+</main>
+<script>
+const R=/*DATA*/;
+const $=s=>document.querySelector(s),EPS=0.01,lg=p=>{p=Math.min(Math.max(p,EPS),1-EPS);return Math.log(p/(1-p))},sig=z=>1/(1+Math.exp(-z));
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const M=R.models,B=R.b,[G0,G1]=R.grid,GRID=Array.from({length:Math.round(G1-G0)+1},(_,i)=>G0+i);
+const NAMEK={k1_logistic:'1 factor, sigmoid',k1_monotone:'1 factor, monotone',k2_logistic:'2 factors, sigmoid',k2_monotone:'2 factors, monotone',eci:'ECI (Epoch’s code)'};
+const short=n=>n.replace('FrontierMath-Tiers-1-3-v2-Private','FrontierMath T1–3 v2').replace('FrontierMath-Tier-4-v2-Private','FrontierMath T4 v2').replace('FrontierMath-2025-02-28-Private','FrontierMath T1–3 (v1)').replace('FrontierMath-Tier-4-2025-07-01-Private','FrontierMath T4 (v1)').replace('OTIS Mock AIME 2024-2025','OTIS Mock AIME');
+document.querySelectorAll('.cut').forEach(e=>e.textContent=new Date(R.cut).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}));
+document.querySelectorAll('.nk').forEach(e=>e.textContent=R.params.nknot);document.querySelectorAll('.lsm').forEach(e=>e.textContent=R.params.smooth);document.querySelectorAll('.lsh').forEach(e=>e.textContent=R.params.shrink);document.querySelectorAll('.nb').forEach(e=>e.textContent=R.params.boot);
+// cell layout: [model, score, fit k1l,k1m,k2l,k2m, oof k1l,k1m,k2l,k2m,eci, fwd k1l,k1m]
+const rmse=a=>{a=a.filter(Number.isFinite);return Math.sqrt(a.reduce((s,v)=>s+v*v,0)/a.length)};
+B.forEach((b,i)=>{b.i=i;b.pts=b.c.map(c=>({m:c[0],y:c[1],t:M[c[0]].t,fit:c.slice(2,6),oof:c.slice(6,11)}));
+ b.cvL=rmse(b.pts.map(p=>p.y-p.oof[0]));b.cvM=rmse(b.pts.map(p=>p.y-p.oof[1]));b.gain=b.cvL-b.cvM;
+ // s0..s1 = θ range of the benchmark's scored models
+ const ts=b.pts.map(p=>p.t);b.s0=Math.min(...ts);b.s1=Math.max(...ts)});
+const sigL=(b,x)=>sig(b.logi1[0]*(x-b.logi1[1]));
+// curve on the θ grid: [θ, fit, band 10%, band 90%]; bands exist only for the CV-tuned curve
+let cm='g1';
+function buildCurves(){B.forEach(b=>{b.curve=GRID.map((x,j)=>[x,b[cm][j],cm==='g1'?b.lo[j]:null,cm==='g1'?b.hi[j]:null]).filter(q=>q[1]!=null)})}
+buildCurves();
+const areaCol=a=>R.cols[a];
+
+// ---------- tiles ----------
+(function(){const r=R.cv.random,f=R.cv.forward,t=$('#tiles');
+ const best=Object.keys(r).filter(k=>k!=='eci').reduce((a,k)=>r[k][0]<r[a][0]?k:a,'k1_logistic');
+ const won=B.filter(b=>b.gain>0).length;
+ const pct=v=>{const d=(1-v/r.k1_logistic[0])*100;return Math.abs(d).toFixed(1)+'% '+(d>=0?'lower':'higher')+' than sigmoid'};
+ const k2h=r.k2_monotone[0]>=r.k1_monotone[0];
+ $('#mapwarn').textContent=k2h?'Caution: the second axis does not improve held-out error ('+r.k2_monotone[0].toFixed(4)+' vs '+r.k1_monotone[0].toFixed(4)+' with one factor), so treat this map as description, not a finding.':'';
+ [['Held-out error, ECI shape (1 factor)',r.k1_logistic[0].toFixed(3),'random 5-fold RMSE'],
+  ['Free monotone curves (1 factor)',r.k1_monotone[0].toFixed(3),pct(r.k1_monotone[0])],
+  ['Two factors, monotone',r.k2_monotone[0].toFixed(3),(r.k2_monotone[0]>r.k1_monotone[0]?'no better than':'better than')+' 1 factor ('+r.k1_monotone[0].toFixed(4)+')'],
+  ['Benchmarks where the free curve predicts better',won+' of '+B.length,'out of fold, 1 factor']
+ ].forEach(([k,v,s])=>{const d=document.createElement('div');d.className='tile';d.innerHTML='<div class="k">'+k+'</div><div class="v">'+v+' <small>'+s+'</small></div>';t.appendChild(d)})})();
+
+// ---------- small multiples ----------
+let yax='score',order='area',sel=null;
+const W=176,H=118,PL=4,PR=4,PT=6,PB=6;
+const allT=M.map(m=>m.t),X0=Math.floor(Math.min(...allT)/10)*10,X1=Math.ceil(Math.max(...allT)/10)*10;
+function yv(b,x,y){return yax==='logit'?lg(y):y}
+function svgPanel(b){
+ const sx=x=>PL+(x-X0)/(X1-X0)*(W-PL-PR);
+ let ylo,yhi;if(yax==='score'){ylo=0;yhi=1}else if(yax==='logit'){ylo=-5;yhi=5}else{ylo=-.45;yhi=.45}
+ const sy=y=>PT+(1-(Math.min(Math.max(y,ylo),yhi)-ylo)/(yhi-ylo))*(H-PT-PB);
+ const col=areaCol(b.area),ink=css('--ink'),muted=css('--faint'),grid=css('--grid'),ref=css('--ref'),band=css('--band');
+ let s='<svg viewBox="0 0 '+W+' '+H+'" aria-hidden="true">';
+ // grid: 50% line / zero line, and capability decades
+ for(let x=Math.ceil(X0/25)*25;x<=X1;x+=25)s+='<line x1="'+sx(x)+'" x2="'+sx(x)+'" y1="'+PT+'" y2="'+(H-PB)+'" stroke="'+grid+'" stroke-width="1"/>';
+ const mid=yax==='score'?.5:0;s+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+sy(mid)+'" y2="'+sy(mid)+'" stroke="'+grid+'" stroke-width="1"/>';
+ // scored range
+ s+='<rect x="'+sx(b.s0)+'" width="'+Math.max(1,sx(b.s1)-sx(b.s0))+'" y="'+(H-PB+1)+'" height="3" rx="1.5" fill="'+col+'" opacity=".55"/>';
+ const inS=x=>x>=b.s0-1&&x<=b.s1+1;
+ if(yax!=='resid'){
+  // band
+  const bd=b.curve.filter(q=>inS(q[0])&&q[2]!=null&&q[3]!=null);
+  if(bd.length>1)s+='<path d="M'+bd.map(q=>sx(q[0])+','+sy(yv(b,q[0],q[3]))).join('L')+'L'+bd.slice().reverse().map(q=>sx(q[0])+','+sy(yv(b,q[0],q[2]))).join('L')+'Z" fill="'+band+'"/>';
+  // sigmoid (dashed), whole range faint, scored range solid ink
+  const sp=GRID.filter(x=>x>=X0&&x<=X1).map(x=>sx(x)+','+sy(yv(b,x,sigL(b,x))));
+  s+='<path d="M'+sp.join('L')+'" fill="none" stroke="'+ref+'" stroke-width="1.2" stroke-dasharray="3 2" opacity=".7"/>';
+  const out=b.curve.map(q=>sx(q[0])+','+sy(yv(b,q[0],q[1])));
+  s+='<path d="M'+out.join('L')+'" fill="none" stroke="'+col+'" stroke-width="1" opacity=".35"/>';
+  const on=b.curve.filter(q=>inS(q[0])).map(q=>sx(q[0])+','+sy(yv(b,q[0],q[1])));
+  if(on.length>1)s+='<path d="M'+on.join('L')+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round"/>';
+  b.pts.forEach(p=>{s+='<circle cx="'+sx(p.t)+'" cy="'+sy(yv(b,p.t,p.y))+'" r="1.7" fill="'+ink+'" opacity=".45"/>'});
+ }else{
+  // sigmoid residuals (out of fold) as dots; free-curve minus sigmoid as the line
+  b.pts.forEach(p=>{if(p.oof[0]!=null)s+='<circle cx="'+sx(p.t)+'" cy="'+sy(p.y-p.oof[0])+'" r="1.7" fill="'+ink+'" opacity=".45"/>'});
+  const on=b.curve.filter(q=>inS(q[0])).map(q=>sx(q[0])+','+sy(q[1]-sigL(b,q[0])));
+  if(on.length>1)s+='<path d="M'+on.join('L')+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round"/>';
+ }
+ return s+'</svg>';
+}
+function drawGrid(){
+ const g=$('#grid');g.innerHTML='';
+ let list=B.slice();
+ if(order==='gain')list.sort((a,b)=>b.gain-a.gain);else if(order==='n')list.sort((a,b)=>b.n-a.n);
+ else list.sort((a,b)=>R.areas.indexOf(a.area)-R.areas.indexOf(b.area)||a.logi1[1]-b.logi1[1]);
+ let last='';
+ list.forEach(b=>{
+  if(order==='area'&&b.area!==last){last=b.area;const h=document.createElement('div');h.className='areahead';h.innerHTML='<span class="sw" style="width:10px;height:10px;border-radius:3px;display:inline-block;background:'+areaCol(b.area)+'"></span>'+b.area;g.appendChild(h)}
+  const p=document.createElement('button');p.type='button';p.className='panel';p.setAttribute('aria-pressed',sel===b.i);
+  const d=b.gain,dt=(d>=0?'−':'+')+Math.abs(d).toFixed(3);
+  p.innerHTML='<div class="t" title="'+b.name+'">'+short(b.name)+'</div><div class="m">'+b.n+' scores · CV '+b.cvL.toFixed(3)+' → '+b.cvM.toFixed(3)+'</div>'+svgPanel(b);
+  p.setAttribute('aria-label',b.name+': held-out error '+b.cvL.toFixed(3)+' with sigmoid, '+b.cvM.toFixed(3)+' with free curve');
+  p.onclick=()=>{sel=b.i;g.querySelectorAll('.panel').forEach(x=>x.setAttribute('aria-pressed','false'));p.setAttribute('aria-pressed','true');drawDetail()};
+  g.appendChild(p)});
+}
+$('#curvelegend').innerHTML='<span><span class="ln" style="border-color:var(--muted)"></span>free monotone curve (area colour; faint outside the scored range)</span><span><span class="bd"></span>bootstrap 80% band</span><span><span class="ln dash"></span>best sigmoid on the same θ</span><span>• scores</span><span>bar under each panel: θ range with scores</span><span style="margin-left:auto">x axis: θ from '+X0+' to '+X1+', gridlines every 25</span>';
+
+function baseLayout(extra){
+ const ink=css('--ink'),muted=css('--muted'),grid=css('--grid');
+ return Object.assign({paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Public Sans, system-ui, sans-serif',size:12,color:ink},
+  margin:{l:52,r:14,t:10,b:44},hoverlabel:{bgcolor:css('--panel'),bordercolor:css('--line'),font:{color:ink,size:12}},
+  xaxis:{gridcolor:grid,zerolinecolor:grid,linecolor:grid,tickfont:{color:muted}},yaxis:{gridcolor:grid,zerolinecolor:grid,linecolor:grid,tickfont:{color:muted}},
+  showlegend:false},extra||{});
+}
+const CFG={displayModeBar:false,responsive:true};
+function deep(a,b){for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k])deep(a[k],b[k]);else a[k]=b[k]}return a}
+function L(extra){return deep(baseLayout(),extra||{})}
+
+function drawDetail(){
+ const b=B[sel],col=areaCol(b.area),ref=css('--ref'),ink=css('--ink');
+ $('#dtitle').textContent=b.name;
+ $('#dsub').textContent=b.area+(b.rel?' · released '+b.rel.slice(0,7):'')+' · '+b.n+' scores · held-out RMSE '+b.cvL.toFixed(3)+' (sigmoid) → '+b.cvM.toFixed(3)+' (free curve)'+' · sigmoid slope '+b.logi1[0].toFixed(3)+'/pt, midpoint '+b.logi1[1].toFixed(1);
+ const f=yax==='logit'?lg:(v=>v),inS=q=>q[0]>=b.s0-1&&q[0]<=b.s1+1;
+ const cv=b.curve,bd=cv.filter(q=>q[2]!=null&&inS(q));
+ const tr=[
+  {x:bd.map(q=>q[0]).concat(bd.map(q=>q[0]).reverse()),y:bd.map(q=>f(q[3])).concat(bd.map(q=>f(q[2])).reverse()),fill:'toself',fillcolor:css('--band'),line:{width:0},hoverinfo:'skip',type:'scatter'},
+  {x:GRID,y:GRID.map(x=>f(sigL(b,x))),mode:'lines',line:{color:ref,width:1.5,dash:'dash'},name:'sigmoid',hoverinfo:'skip'},
+  {x:cv.map(q=>q[0]),y:cv.map(q=>f(q[1])),mode:'lines',line:{color:col,width:1,dash:'dot'},opacity:.6,hoverinfo:'skip'},
+  {x:cv.filter(inS).map(q=>q[0]),y:cv.filter(inS).map(q=>f(q[1])),mode:'lines',line:{color:col,width:2.5},name:'free curve',hoverinfo:'skip'},
+  {x:b.pts.map(p=>p.t),y:b.pts.map(p=>f(p.y)),mode:'markers',marker:{size:8,color:col,line:{color:css('--panel'),width:1.5}},
+   customdata:b.pts.map(p=>[M[p.m].m,M[p.m].d,(p.y*100).toFixed(1),(p.oof[0]*100).toFixed(1),(p.oof[1]*100).toFixed(1),M[p.m].eci]),
+   hovertemplate:'<b>%{customdata[0]}</b> (%{customdata[1]})<br>score %{customdata[2]}%<br>θ %{x:.1f} · ECI %{customdata[5]}<br>held-out prediction: sigmoid %{customdata[3]}%, free %{customdata[4]}%<extra></extra>'}];
+ Plotly.react('dplot',tr,L({xaxis:{title:{text:'θ (one-factor nonparametric capability)',font:{size:12}},range:[Math.max(X0,b.s0-25),Math.min(X1,b.s1+25)]},
+  yaxis:{title:{text:yax==='logit'?'log-odds of score':'score',font:{size:12}},range:yax==='logit'?[-5,5]:[-.03,1.03],tickformat:yax==='logit'?'':'.0%'}}),CFG);
+ const pts=b.pts.filter(p=>p.oof[0]!=null);
+ Plotly.react('rplot',[
+  {x:pts.map(p=>p.t),y:pts.map(p=>p.y-p.oof[0]),mode:'markers',name:'sigmoid',marker:{size:7,color:'rgba(0,0,0,0)',line:{color:ref,width:1.3}},customdata:pts.map(p=>M[p.m].m),hovertemplate:'%{customdata}<br>sigmoid residual %{y:.3f}<extra></extra>'},
+  {x:pts.map(p=>p.t),y:pts.map(p=>p.y-p.oof[1]),mode:'markers',name:'free curve',marker:{size:6,color:col},customdata:pts.map(p=>M[p.m].m),hovertemplate:'%{customdata}<br>free-curve residual %{y:.3f}<extra></extra>'}],
+  L({showlegend:true,legend:{orientation:'h',y:1.08,x:0},xaxis:{title:{text:'θ',font:{size:12}},range:[Math.max(X0,b.s0-25),Math.min(X1,b.s1+25)]},yaxis:{title:{text:'score − held-out prediction',font:{size:12}},zeroline:true,zerolinecolor:css('--faint')}}),CFG);
+}
+document.querySelectorAll('.seg').forEach(seg=>seg.querySelectorAll('button').forEach(bt=>bt.onclick=()=>{
+ seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===bt));const c=seg.dataset.ctl,v=bt.dataset.v;
+ if(c==='cm'){cm=v;buildCurves();drawGrid();drawDetail();drawBend();drawFrontier()}else if(c==='yax'){yax=v;drawGrid();drawDetail()}else if(c==='order'){order=v;drawGrid()}else if(c==='mapv'){mapv=v;drawMap()}else if(c==='maplab'){maplab=v;drawMap()}else if(c==='resv'){resv=+v;drawHeat()}}));
+
+// ---------- bend overlay ----------
+function drawBend(){
+ const tr=[],seen={};
+ B.forEach(b=>{const q=b.curve.filter(q=>q[0]>=b.s0&&q[0]<=b.s1&&q[1]>=.01&&q[1]<=.99);if(q.length<2)return;
+  const a=b.logi1[0],d=b.logi1[1];
+  tr.push({x:q.map(v=>a*(v[0]-d)),y:q.map(v=>lg(v[1])-a*(v[0]-d)),mode:'lines',line:{color:areaCol(b.area),width:1.6},opacity:.8,
+   legendgroup:b.area,name:b.area,showlegend:!seen[b.area]&&(seen[b.area]=1),text:b.name,hovertemplate:'<b>%{text}</b><br>sigmoid log-odds %{x:.2f} · free curve %{y:+.2f} above<extra></extra>'})});
+ tr.unshift({x:[-5,5],y:[0,0],mode:'lines',line:{color:css('--ref'),width:1.5,dash:'dash'},hoverinfo:'skip',showlegend:true,name:'sigmoid (ECI shape)'});
+ Plotly.react('bendplot',tr,L({showlegend:true,legend:{orientation:'h',y:-0.14,x:0},margin:{b:80},
+  xaxis:{title:{text:'slope × (θ − midpoint)   [the sigmoid’s own log-odds]',font:{size:12}},range:[-4.8,4.8],zeroline:true,zerolinecolor:css('--faint')},
+  yaxis:{title:{text:'free curve − sigmoid (log-odds)',font:{size:12}},zeroline:false}}),CFG);
+}
+
+// ---------- CV ----------
+function drawCV(){
+ const keys=['eci','k1_logistic','k1_monotone','k2_logistic','k2_monotone'];
+ const one=(id,obj,title)=>{const ks=keys.filter(k=>obj[k]).reverse();
+  Plotly.react(id,[{x:ks.map(k=>obj[k][0]),y:ks.map(k=>NAMEK[k]),mode:'markers',type:'scatter',
+   error_x:{type:'data',symmetric:false,array:ks.map(k=>obj[k][2]-obj[k][0]),arrayminus:ks.map(k=>obj[k][0]-obj[k][1]),color:css('--faint'),thickness:1.5,width:0},
+   marker:{size:10,color:ks.map(k=>k.includes('monotone')?css('--accent'):css('--ref')),line:{color:css('--panel'),width:2}},
+   hovertemplate:'%{y}: %{x:.4f}<extra></extra>'}],
+   L({margin:{l:150,r:14,t:30,b:40},title:{text:title,font:{size:13},x:0,xanchor:'left'},xaxis:{title:{text:'held-out RMSE (score units)',font:{size:12}}},yaxis:{automargin:true}}),CFG)};
+ one('cvr',R.cv.random,'Random cells ('+R.cv.n_random.toLocaleString()+' scores)');
+ one('cvf',R.cv.forward,'Forward: models after '+R.cut.slice(0,7)+' ('+R.cv.n_forward+' scores, '+R.cv.n_late+' models)');
+ $('#cvtable').innerHTML='<table class="cv"><tr><th>Fit</th><th>In-sample</th><th>Random CV</th><th>Forward CV</th></tr>'+keys.map(k=>'<tr><td>'+NAMEK[k]+'</td><td>'+(R.insample[k]!=null?R.insample[k].toFixed(4):'')+'</td><td>'+R.cv.random[k][0].toFixed(4)+'</td><td>'+(R.cv.forward[k]?R.cv.forward[k][0].toFixed(4):'—')+'</td></tr>').join('')+'</table>';
+}
+
+// ---------- 2-D map ----------
+let mapv='k2_monotone',maplab='extreme';
+function frontierIdx(val){const o=M.map((m,i)=>i).filter(i=>M[i].d>='2023-03-14').sort((a,b)=>M[a].d.localeCompare(M[b].d)||val(a)-val(b));
+ const day={};o.forEach(i=>{if(day[M[i].d]==null||val(i)>val(day[M[i].d]))day[M[i].d]=i});let best=-1e9;
+ return Object.keys(day).sort().map(k=>day[k]).filter(i=>val(i)>best&&(best=val(i),true))}
+const yr=d=>+d.slice(0,4)+(+d.slice(5,7)-1)/12;
+function drawMap(){
+ const key=mapv==='k2_monotone'?'u':'ul',U=M.map(m=>m[key]),ink=css('--ink');
+ const ang=B.map(b=>mapv==='k2_monotone'?b.a2:b.a2l);
+ const fr=frontierIdx(i=>U[i][0]),frs=new Set(fr);
+ const cx=130,cy=0,Rr=28,tr=[];
+ // benchmark rays from a fixed origin
+ B.forEach((b,i)=>{const a=ang[i];tr.push({x:[cx,cx+Rr*Math.cos(a)],y:[cy,cy+Rr*Math.sin(a)],mode:'lines',line:{color:areaCol(b.area),width:1.2},opacity:.55,hoverinfo:'skip'});
+  tr.push({x:[cx+Rr*Math.cos(a)],y:[cy+Rr*Math.sin(a)],mode:'markers',marker:{size:6,color:areaCol(b.area)},text:[b.name],hovertemplate:'<b>%{text}</b><br>direction '+(a*180/Math.PI).toFixed(0)+'°<extra></extra>'})});
+ tr.push({x:fr.map(i=>U[i][0]),y:fr.map(i=>U[i][1]),mode:'lines',line:{color:ink,width:1.5},opacity:.6,hoverinfo:'skip'});
+ const cs=[[0,'#c9d8f5'],[.5,'#5b84d6'],[1,'#13306e']];
+ tr.push({x:U.map(u=>u[0]),y:U.map(u=>u[1]),mode:'markers',type:'scatter',
+  marker:{size:M.map((m,i)=>frs.has(i)?10:7),color:M.map(m=>yr(m.d)),colorscale:cs,cmin:2023,cmax:2026.8,line:{color:css('--panel'),width:1},
+   colorbar:{title:{text:'released',side:'right',font:{size:11}},thickness:10,len:.6,tickvals:[2023,2024,2025,2026],tickfont:{size:11,color:css('--muted')},outlinewidth:0}},
+  customdata:M.map(m=>[m.m,m.d,m.lab,m.eci]),hovertemplate:'<b>%{customdata[0]}</b><br>%{customdata[2]}, %{customdata[1]}<br>axis 1 %{x:.1f} · axis 2 %{y:.1f} · ECI %{customdata[3]}<extra></extra>'});
+ const ext=M.map((m,i)=>i).sort((a,b)=>U[a][1]-U[b][1]),lab=maplab==='frontier'?fr.slice(-8):maplab==='extreme'?ext.slice(0,6).concat(ext.slice(-6)):[];
+ const ann=lab.map((i,k)=>({x:U[i][0],y:U[i][1],text:M[i].m,showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:css('--faint'),ax:k%2?24:-24,ay:k%2?-22:22,font:{size:10.5,color:ink},bgcolor:'rgba(0,0,0,0)'}));
+ const xs=U.map(u=>u[0]),ys=U.map(u=>u[1]);
+ Plotly.react('mapplot',tr,L({annotations:ann,xaxis:{title:{text:'axis 1 (ECI scale)',font:{size:12}},range:[Math.min(...xs)-5,Math.max(...xs)+5]},yaxis:{title:{text:'axis 2',font:{size:12}},range:[-Math.max(32,...ys.map(Math.abs))-2,Math.max(32,...ys.map(Math.abs))+2],scaleanchor:'x',scaleratio:1,constrain:'domain',zeroline:true,zerolinecolor:css('--faint')}}),CFG);
+ // angle strip
+ const ord=B.map((b,i)=>i).sort((a,b)=>ang[a]-ang[b]);
+ Plotly.react('angplot',[{x:ord.map(i=>ang[i]*180/Math.PI),y:ord.map(i=>short(B[i].name)),mode:'markers',type:'scatter',marker:{size:8,color:ord.map(i=>areaCol(B[i].area))},
+  customdata:ord.map(i=>B[i].area),hovertemplate:'<b>%{y}</b> (%{customdata})<br>%{x:.0f}°<extra></extra>'}],
+  L({margin:{l:150,r:10,t:24,b:40},title:{text:'Benchmark directions',font:{size:13},x:0,xanchor:'left'},xaxis:{title:{text:'angle from axis 1 (°)',font:{size:12}},zeroline:true,zerolinecolor:css('--faint'),range:[-75,75]},yaxis:{tickfont:{size:10},automargin:true,dtick:1}}),CFG);
+}
+
+// ---------- rank ----------
+function drawRank(){
+ const ink=css('--ink'),idx=M.map((m,i)=>i);
+ const diff=idx.map(i=>M[i].t-M[i].eci),mv=idx.slice().sort((a,b)=>Math.abs(diff[b])-Math.abs(diff[a])).slice(0,8);
+ const lo=Math.min(...M.map(m=>Math.min(m.t,m.eci)))-3,hi=Math.max(...M.map(m=>Math.max(m.t,m.eci)))+3;
+ Plotly.react('rankplot',[{x:[lo,hi],y:[lo,hi],mode:'lines',line:{color:css('--ref'),dash:'dash',width:1.2},hoverinfo:'skip'},
+  {x:M.map(m=>m.eci),y:M.map(m=>m.t),mode:'markers',marker:{size:7,color:M.map(m=>yr(m.d)),colorscale:[[0,'#c9d8f5'],[.5,'#5b84d6'],[1,'#13306e']],cmin:2023,cmax:2026.8,line:{color:css('--panel'),width:1}},
+   customdata:M.map((m,i)=>[m.m,m.d,diff[i].toFixed(1)]),hovertemplate:'<b>%{customdata[0]}</b> (%{customdata[1]})<br>ECI %{x:.1f} · θ %{y:.1f} · θ − ECI %{customdata[2]}<extra></extra>'}],
+  L({annotations:mv.map(i=>({x:M[i].eci,y:M[i].t,text:M[i].m,showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:css('--faint'),ax:diff[i]>0?-30:30,ay:diff[i]>0?-16:16,font:{size:10.5,color:ink}})),
+   xaxis:{title:{text:'published ECI',font:{size:12}}},yaxis:{title:{text:'θ, one-factor nonparametric',font:{size:12}}}}),CFG);
+}
+
+// ---------- residual heatmap ----------
+let resv=1;
+function drawHeat(){
+ const keyT=resv===3?(i=>M[i].u[0]):(i=>M[i].t);
+ const mods=M.map((m,i)=>i).sort((a,b)=>keyT(a)-keyT(b)),col={};mods.forEach((m,k)=>col[m]=k);
+ const rows=B.slice().sort((a,b)=>a.logi1[1]-b.logi1[1]);
+ const z=rows.map(b=>{const r=new Array(mods.length).fill(null);b.pts.forEach(p=>r[col[p.m]]=p.y-p.fit[resv]);return r});
+ const txt=rows.map(b=>{const r=new Array(mods.length).fill('');b.pts.forEach(p=>r[col[p.m]]=M[p.m].m+' · score '+(p.y*100).toFixed(0)+'% · fit '+(p.fit[resv]*100).toFixed(0)+'%');return r});
+ const rms=Math.sqrt(B.reduce((s,b)=>s+b.pts.reduce((t,p)=>t+(p.y-p.fit[resv])**2,0),0)/B.reduce((s,b)=>s+b.n,0));
+ Plotly.react('heat',[{type:'heatmap',z,x:mods.map((m,k)=>k),y:rows.map(b=>short(b.name)),text:txt,zmin:-.35,zmax:.35,zmid:0,xgap:0,ygap:1,
+  colorscale:[[0,css('--neg')],[.5,css('--mid')],[1,css('--pos')]],
+  colorbar:{title:{text:'score − fit',side:'right',font:{size:11}},thickness:10,len:.5,tickformat:'.0%',tickfont:{size:11,color:css('--muted')},outlinewidth:0},
+  hovertemplate:'<b>%{y}</b><br>%{text}<extra></extra>'}],
+  L({margin:{l:150,r:10,t:28,b:40},title:{text:'In-sample RMSE '+rms.toFixed(4),font:{size:13},x:0,xanchor:'left'},
+   xaxis:{title:{text:'models, sorted by '+(resv===3?'axis 1':'θ')+' (low → high)',font:{size:12}},showticklabels:false,showgrid:false},yaxis:{tickfont:{size:10},dtick:1,automargin:true,showgrid:false}}),CFG);
+}
+
+// ---------- frontier by benchmark ----------
+function drawFrontier(){
+ const fr=frontierIdx(i=>M[i].t),ink=css('--ink'),tr=[];
+ B.forEach(b=>{const a=b.logi1[0],d=b.logi1[1];
+  const pts=fr.filter(i=>M[i].t>=b.s0&&M[i].t<=b.s1).map(i=>{const j=Math.round(M[i].t-G0),g=b[cm][j];return g==null||g<.02||g>.98?null:[M[i].d,d+lg(g)/a,M[i].m]}).filter(Boolean);
+  if(pts.length<2)return;
+  tr.push({x:pts.map(p=>p[0]),y:pts.map(p=>p[1]),mode:'lines',line:{color:areaCol(b.area),width:1.3},opacity:.7,text:pts.map(p=>p[2]),name:b.name,
+   hovertemplate:'<b>'+b.name.replace(/</g,'')+'</b><br>%{text}: %{y:.1f}<extra></extra>'})});
+ tr.push({x:fr.map(i=>M[i].d),y:fr.map(i=>M[i].t),mode:'lines+markers',line:{color:ink,width:3.5},marker:{size:6,color:ink},text:fr.map(i=>M[i].m),hovertemplate:'<b>%{text}</b><br>frontier θ %{y:.1f}<extra></extra>'});
+ Plotly.react('frplot',tr,L({xaxis:{type:'date'},yaxis:{title:{text:'capability (θ / benchmark-implied)',font:{size:12}}}}),CFG);
+}
+
+function drawAll(){drawGrid();drawDetail();drawBend();drawCV();drawMap();drawRank();drawHeat();drawFrontier()}
+sel=B.reduce((a,b)=>b.gain>a.gain?b:a,B[0]).i;
+if(typeof Plotly==='undefined'){document.querySelectorAll('.plot').forEach(e=>e.textContent='Chart library failed to load.');drawGrid()}
+else{drawAll();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll)}
+</script>
+</body></html>
