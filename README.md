@@ -1,5 +1,7 @@
 # Frontier ECI and the benchmark scores behind it
 
+> **Working on this repo?** Start with [`NEXT_STEPS.md`](NEXT_STEPS.md): current findings, open questions and a map of the code.
+
 Epoch AI's [Capabilities Index](https://epoch.ai/eci) (ECI) fits one capability number per model from ~60 benchmarks, using
 
     score = sigmoid(slope_b × (ECI_model − difficulty_b))
