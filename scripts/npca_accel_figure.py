@@ -9,7 +9,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 A = json.load(open(ROOT / "data" / "npca_accel.json"))
-COL = dict(logistic="#1d2433", four_pl="#8b3dff", cloglog="#e8177d", shared="#00a86b", monotone="#1d64f2",
+COL = dict(logistic="#1d2433", four_pl="#8b3dff", shared="#00a86b", monotone="#1d64f2",
            logit_spline="#00b4d8", monotone_weak="#5b8def", monotone_free="#9db8f5", monotone_q="#ff7a00", item_mixture="#f4a259")
 w0, w1, w2 = (pd.Timestamp(w) for w in A["windows"])
 

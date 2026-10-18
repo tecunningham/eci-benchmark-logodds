@@ -5,7 +5,6 @@ between options (the joint, alternating fits are in npca_build.py). Options:
 
   logistic       sigmoid(a (theta - d))                                  ECI's curve
   four_pl        floor + (1 - floor - gap) * sigmoid(...)                 adds a floor and a ceiling
-  cloglog        1 - exp(-exp(a (theta - d)))                             asymmetric: slow start, fast finish
   shared         G(a_b (theta - d_b)), one free monotone G for all        tests the sigmoid's shape globally
   logit_spline   sigmoid(h(theta)), h monotone, penalised for bending     bends; infinite penalty = logistic
   item_mixture   sum_j w_j sigmoid(s (theta - d_j)), w >= 0               a spread of item difficulties
@@ -47,20 +46,22 @@ def logistic(x, y, lo, hi):
     return lambda t: sig(a * (t - d))
 
 
+PULL = 1.0   # pull of floor and ceiling towards 0 and 1 (chosen on the random folds; 0.3 let fitted ceilings sit at today's best score)
+
+
 def four_pl(x, y, lo, hi):
+    """floor + (ceiling - floor) * sigmoid(a (theta - d)). The floor and ceiling are attainable bounds, so the floor
+    may not sit above any observed score and the ceiling may not sit below one: floor <= min(y), ceiling >= max(y).
+    (Unconstrained least squares instead puts the 'ceiling' at the average score of the strongest models, below
+    the scores many of them reach, e.g. 96% on OTIS Mock AIME with 26 of 172 scores above it.)"""
     a, d = F.fit_logistic(x, y)
-    def res(p):   # floor c and gap e (1 - ceiling), lightly pulled to 0 so sparse benchmarks stay logistic
+    cmax, emax = max(float(y.min()), 1e-6), max(1 - float(y.max()), 1e-6)
+    def res(p):   # floor c and gap e (1 - ceiling), pulled to 0 so a floor or ceiling must earn its place
         la, d_, c, e = p
-        return np.r_[c + (1 - c - e) * sig(np.exp(la) * (x - d_)) - y, 0.3 * c, 0.3 * e, 0.03 * (la - np.log(a))]
-    la, d_, c, e = least_squares(res, [np.log(a), d, .01, .01], bounds=([-8, -np.inf, 0, 0], [2, np.inf, .5, .5])).x
+        return np.r_[c + (1 - c - e) * sig(np.exp(la) * (x - d_)) - y, PULL * c, PULL * e, 0.03 * (la - np.log(a))]
+    la, d_, c, e = least_squares(res, [np.log(a), d, min(.01, cmax / 2), min(.01, emax / 2)],
+                                 bounds=([-8, -np.inf, 0, 0], [2, np.inf, cmax, emax])).x
     return lambda t: c + (1 - c - e) * sig(np.exp(la) * (t - d_))
-
-
-def cloglog(x, y, lo, hi):
-    a, d = F.fit_logistic(x, y)
-    f = lambda p, t: 1 - np.exp(-np.exp(np.clip(np.exp(p[0]) * (t - p[1]), -30, 30)))
-    p = least_squares(lambda p: np.r_[f(p, x) - y, 0.03 * (p[0] - np.log(a))], [np.log(a), d]).x
-    return lambda t: f(p, t)
 
 
 def logit_spline(x, y, lo, hi, lam=1.0, nk=8):
@@ -124,7 +125,6 @@ def shared(th, mi, bi, y, nb, iters=8, lam=2.0):
 OPTIONS = [  # key, label, fitter, extra parameters per benchmark, keeps the spacing between models?
     ("logistic", "Logistic (ECI's curve)", logistic, "2", "yes"),
     ("four_pl", "Logistic + floor + ceiling", four_pl, "4", "yes"),
-    ("cloglog", "Complementary log-log", cloglog, "2", "yes"),
     ("shared", "One free shape shared by all benchmarks", None, "2 (+ 1 shared curve)", "yes"),
     ("logit_spline", "Monotone spline in logit space", logit_spline, "8, penalised", "only through the penalty"),
     ("item_mixture", "Mixture of item difficulties", item_mixture, "30 weights, penalised", "no (keeps stretching in joint fits)"),

@@ -36,7 +36,7 @@ warnings.filterwarnings("ignore")
 ROOT = Path(__file__).resolve().parents[1]
 RAW = NB.RAW
 EPS = 0.01
-SHOW = ["four_pl", "cloglog", "shared", "monotone"]   # options that settle, besides Epoch's published logistic
+SHOW = ["four_pl", "shared", "monotone"]   # options that settle, besides Epoch's published logistic
 
 
 def implied(curve, ys, lo, hi):
@@ -87,9 +87,10 @@ def loo(args):
     return key, drop, s["prev"], s["last"]
 
 
-def main(leverage=True):
+def main(leverage=True, only=None):
+    """only: refit just these curve keys and merge them into the existing data/curve_fits.json."""
     with ProcessPoolExecutor(8) as ex:
-        fits = list(ex.map(fit_variant, SHOW))
+        fits = list(ex.map(fit_variant, [k for k in SHOW if not only or k in only]))
         L = list(ex.map(loo, [(k, b) for k in ("logistic", "monotone") for b in range(NB.NB)])) if leverage else []
     E = pd.read_csv(ROOT / "data" / "epoch" / "edi_scores.csv").set_index("benchmark_name")
     pub_imp, pub_cen = [], []
@@ -101,6 +102,10 @@ def main(leverage=True):
         pub_cen.append([int(-1 if v < EPS else 1 if v > 1 - EPS else 0) for v in y0])
     out = dict(eps=EPS, variants=fits, published=dict(edi=[round(float(E.loc[b["name"], "edi"]), 3) for b in RAW["b"]],
                slope=[round(float(E.loc[b["name"], "estimated_slope_scaled"]), 5) for b in RAW["b"]], imp=pub_imp, cen=pub_cen))
+    if only:
+        old = {v["key"]: v for v in json.load(open(ROOT / "data" / "curve_fits.json"))["variants"]}
+        new = old | {f["key"]: f for f in fits}
+        out["variants"] = [new[k] for k in SHOW if k in new]
     json.dump(out, open(ROOT / "data" / "curve_fits.json", "w"), separators=(",", ":"))
     for f in fits:
         print(f"{f['label']:45s} rmse {f['rmse']:.4f}  prev {f['prev']:.1f}  last {f['last']:.1f}")
@@ -151,5 +156,6 @@ def implied_shift():
 
 if __name__ == "__main__":
     if "--shift-only" not in sys.argv:
-        main(leverage="--no-leverage" not in sys.argv)
+        main(leverage="--no-leverage" not in sys.argv,
+             only=sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None)
     implied_shift()

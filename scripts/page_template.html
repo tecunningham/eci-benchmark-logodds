@@ -107,7 +107,7 @@ let slope=RAW.slope,refit=false;
 // scale: benchmark lines in log-odds, or as the capability each score implies through its benchmark's fitted curve
 let curve='eci',scale='logodds',FROM=RAW.start,IMP=CF.published.imp,CEN=CF.published.cen;
 const CURVES=Object.fromEntries(CF.variants.map(v=>[v.key,v]));
-const SHORT={four_pl:'logistic + floor + ceiling',cloglog:'complementary log-log',shared:'shared free shape',monotone:'piecewise-linear'};
+const SHORT={four_pl:'logistic + floor + ceiling',shared:'shared free shape',monotone:'piecewise-linear'};
 const curveName=()=>curve==='eci'?'ECI':SHORT[curve]||CURVES[curve].label.toLowerCase();
 function frontier(ms){
  const day={};ms.forEach(o=>{if(!day[o.d]||o.e>day[o.d].e)day[o.d]=o});

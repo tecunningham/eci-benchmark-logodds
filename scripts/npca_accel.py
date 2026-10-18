@@ -38,7 +38,6 @@ OPTS = {o[0]: o for o in LKS.OPTIONS}
 VARIANTS = [  # key, label, curve option, extra fit arguments, settles (bootstrapped)?
     ("logistic", "Logistic (ECI's curve)", "logistic", {}, True),
     ("four_pl", "Logistic + floor + ceiling", "four_pl", {}, True),
-    ("cloglog", "Complementary log-log", "cloglog", {}, True),
     ("shared", "One free shape shared by all benchmarks", "shared", {}, True),
     ("monotone", "Piecewise-linear monotone (npca, pull 10)", "monotone", {}, True),
     ("logit_spline", "Monotone spline in logit space", "logit_spline", {"lam": 1.0}, False),
@@ -172,16 +171,18 @@ def forward_bias():
     return out
 
 
-def main():
+def main(only=None):
+    """only: refit just these variant keys and merge them into the existing data/npca_accel.json."""
+    sel = [v for v in VARIANTS if not only or v[0] in only]
     with ProcessPoolExecutor(8) as ex:
-        full = {k: (th, sse, path) for k, th, sse, path in ex.map(full_job, VARIANTS)}
-        boots = list(ex.map(boot_job, [(v[0], 1000 + i) for v in VARIANTS if v[4] for i in range(BOOT)]))
+        full = {k: (th, sse, path) for k, th, sse, path in ex.map(full_job, sel)}
+        boots = list(ex.map(boot_job, [(v[0], 1000 + i) for v in sel if v[4] for i in range(BOOT)]))
     pub = stats(NB.ECI)
     out = dict(windows=[str(w) for w in W], iters=ITERS, boot=BOOT, boot_iters=BOOT_ITERS, variants=[],
                published=dict(prev=round(pub["prev"], 2), last=round(pub["last"], 2),
                               frontier=[[str(DATES[m]), NAMES[m], round(float(NB.ECI[m]), 2)] for m in pub["rec"]]),
                bias=forward_bias())
-    for key, label, opt, par, settles in VARIANTS:
+    for key, label, opt, par, settles in sel:
         th, sse, path = full[key]
         s = stats(th)
         b = np.array([(p, l) for k, p, l in boots if k == key])
@@ -198,9 +199,14 @@ def main():
               + (f"  diff 90% [{ci['diff'][0]:+.1f},{ci['diff'][1]:+.1f}] P(accel) {ci['p_accel']:.2f}" if ci else ""), flush=True)
     print(f"{'Published ECI':55s}              prev12 {pub['prev']:6.1f}  last12 {pub['last']:6.1f}")
     print("forward bias:", out["bias"])
+    if only:
+        old = json.load(open(ROOT / "data" / "npca_accel.json"))
+        new = {v["key"]: v for v in old["variants"]} | {v["key"]: v for v in out["variants"]}
+        out["variants"] = [new[v[0]] for v in VARIANTS if v[0] in new]
     json.dump(out, open(ROOT / "data" / "npca_accel.json", "w"), separators=(",", ":"))
     print("wrote data/npca_accel.json")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None)

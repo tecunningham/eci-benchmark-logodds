@@ -9,7 +9,7 @@ so on a log-odds scale every benchmark should rise linearly with ECI. These char
 ![Frontier ECI and benchmark scores, all labs](figures/eci_frontier_all.png)
 
 - **Interactive version:** https://tecunningham.github.io/eci-benchmark-logodds/ (source [`index.html`](index.html)). Choose a lab to see that lab's own frontier (running best ECI among its models), with the overall frontier dashed for comparison. Untick benchmarks to **refit ECI** on the rest (see below). The chart runs full width, and the page has three more controls:
-  - **Curve:** shows the frontier under any benchmark curve whose joint fit settles: Epoch's logistic, logistic plus floor and ceiling, complementary log-log, a shared free shape, or the piecewise-linear curve. The method is in the nonparametric section below.
+  - **Curve:** shows the frontier under any benchmark curve whose joint fit settles: Epoch's logistic, logistic plus floor and ceiling, a shared free shape, or the piecewise-linear curve. The method is in the nonparametric section below.
   - **Scale:** *Scores in log-odds* is the original view. *Capability each score implies* maps every score back through its benchmark's own fitted curve onto the frontier's axis. For the logistic, that is each benchmark's log-odds rescaled by its own slope and difficulty. Before mapping, each score is pinned to 1%–99% of the way from its curve's floor to its ceiling, as the log-odds view pins scores to 1%–99%. Pinned scores are drawn hollow. Without the pin, a score at or past a fitted floor or ceiling, which the curve can't invert, would land at the end of the range; this mattered most for logistic + floor + ceiling.
   - **From:** zooms in by moving the earliest date shown.
 
@@ -33,8 +33,7 @@ so on a log-odds scale every benchmark should rise linearly with ECI. These char
 |---|---|---|---|---|
 | Published ECI | 13.2 | 17.1 | | |
 | Logistic (ECI's curve) | 13.2 | 17.0 | 12.9–22.3 | 86% |
-| Logistic + floor + ceiling | 15.3 | 18.0 | 15.3–28.2 | 98% |
-| Complementary log-log | 12.4 | 11.4 | 8.7–15.7 | 19% |
+| Logistic + floor + ceiling | 13.2 | 18.0 | 12.5–24.1 | 89% |
 | One free shape shared by all benchmarks | 13.4 | 19.2 | 12.8–23.5 | 81% |
 | Piecewise-linear monotone (npca, pull 10) | 13.6 | 21.0 | 16.8–27.6 | 99% |
 | Monotone spline in logit space | 15.0 | 22.2 | still rising | — |
@@ -45,11 +44,10 @@ so on a log-odds scale every benchmark should rise linearly with ECI. These char
 
 Intervals come from 100 refits on benchmarks resampled with replacement. They're only computed for curves whose answer settles.
 
-- **The earlier rate is roughly agreed: 12–15 points a year.** ECI's logistic says growth rose to 17 points a year, a speed-up in 86% of resamples.
+- **The earlier rate is agreed: 13.2–13.6 points a year under every curve that settles.** ECI's logistic says growth rose to 17 points a year, a speed-up in 86% of resamples.
 - **Curves that predict newer models better read more acceleration:**
   - The shared free shape gives 19.2.
   - The piecewise-linear npca curve gives 21.0, about 1.5 times the earlier rate, with a speed-up in 99% of resamples. It is the curve that is clearly better on later models in the comparison below.
-  - Complementary log-log is the only curve that sees no speed-up (11.4), and it fits worst of the parametric curves.
 - **The direction is robust; the size isn't.** A curve that is free per benchmark doesn't pin down the spacing between models. With a weaker pull toward the logistic, quantile-placed knots, or an item mixture, the fit keeps stretching the top of the axis, and the last-year rate climbs to 22–37 points a year without settling (dashed lines in the figure). Only curves tied to a common shape give a number set by the data. Of those, the shared shape is the most flexible, and it gives 19.2.
 - **Mechanism.** Logistic curves fitted on older models rise too steeply. Later models score above the prediction where predicted scores are low, and below it near the top. In the 80–100% band, the error is -0.062 for the logistic and -0.038 for the piecewise-linear curve. So benchmarks saturate more slowly than the logistic assumes, and the last points toward 100% take more capability than ECI credits. The models that won those points, last year's frontier, therefore sit higher. The piecewise-linear curve corrects part of this, which is why it both predicts later models better and reads more acceleration.
 
@@ -69,17 +67,16 @@ python npca_build_page.py     # -> ../npca.html
 python build_page.py          # -> ../index.html
 ```
 
-### Eight ways to fit a benchmark's curve
+### Seven ways to fit a benchmark's curve
 
-ECI assumes every benchmark's score follows a logistic curve of capability. [`scripts/npca_links.py`](scripts/npca_links.py) fits eight different curves to each benchmark and compares them on scores they never saw. Each model's capability is held fixed at ECI refit on the training scores only, so only the curve differs.
+ECI assumes every benchmark's score follows a logistic curve of capability. [`scripts/npca_links.py`](scripts/npca_links.py) fits seven different curves to each benchmark and compares them on scores they never saw. Each model's capability is held fixed at ECI refit on the training scores only, so only the curve differs.
 
-![Held-out error of eight ways to fit a benchmark's curve, relative to the logistic](figures/npca_links.png)
+![Held-out error of seven ways to fit a benchmark's curve, relative to the logistic](figures/npca_links.png)
 
 | Curve | Parameters per benchmark | Keeps spacing between models? | Random held-out RMSE (vs logistic) | Later-models RMSE (vs logistic) |
 |---|---|---|---|---|
 | Logistic (ECI's curve) | 2 | yes | 0.0947 (0.0%) | 0.1656 (0.0%) |
-| Logistic + floor + ceiling | 4 | yes | 0.0946 (−0.0%) | 0.1728 (+4.3%) |
-| Complementary log-log | 2 | yes | 0.0963 (+1.7%) | 0.1938 (+17.0%) |
+| Logistic + floor + ceiling | 4 | yes | 0.0943 (−0.4%) | 0.1655 (−0.1%) |
 | One free shape shared by all benchmarks | 2 (+ 1 shared curve) | yes | 0.0947 (+0.0%) | 0.1624 (−1.9%) |
 | Monotone spline in logit space | 8, penalised | only through the penalty | 0.0936 (−1.2%) | 0.1663 (+0.4%) |
 | Mixture of item difficulties | 30 weights, penalised | no (keeps stretching in joint fits) | 0.0930 (−1.8%) | 0.1731 (+4.5%) |
@@ -87,8 +84,7 @@ ECI assumes every benchmark's score follows a logistic curve of capability. [`sc
 | Isotonic (any step function) | up to n | no | 0.0975 (+3.0%) | 0.2016 (+21.8%) |
 
 How each curve works:
-- **Floor and ceiling** let a benchmark start above 0% or top out below 100%.
-- **Complementary log-log** is an asymmetric S: a slow start, then fast saturation.
+- **Floor and ceiling** let a benchmark start above 0% or top out below 100%. They are attainable bounds, so the floor can't sit above any observed score and the ceiling can't sit below one, and both are pulled toward 0 and 1 (weight 1, chosen on the random folds). Fitted freely, least squares puts the "ceiling" at the *average* score of the strongest models, below many of their scores: 96% on OTIS Mock AIME, with 26 of 172 scores above it. It then extrapolates badly (+4.3% on later models). With the constraint, ceilings well below 100% remain only where scores plateau: MMLU at 89%, SimpleBench at 87%, GPQA diamond and ARC-AGI-2 near 95%.
 - **Shared shape** learns one free S-shape for all benchmarks; each benchmark keeps its own slope and difficulty.
 - **Monotone spline in logit space** fits a monotone spline to the log-odds of the score, penalised for bending. A very large penalty gives back the logistic exactly.
 - **Item-difficulty mixture** treats a benchmark as many questions of different difficulty, each answered on a logistic with one slope shared by all benchmarks. The curve is a non-negative weighted average of those logistics.
@@ -103,7 +99,7 @@ The spline's penalty and the mixture's settings were tuned on the random folds, 
 
 What the comparison shows:
 - **No shape beats the logistic by much.** On random held-out scores, the best curves (the item mixture and the piecewise-linear curve) cut error by under 2%. The gains come from heavily scored benchmarks such as OTIS Mock AIME, WeirdML, GSM8K, DTBench and MMLU.
-- **Extrapolation separates them.** On later models, the piecewise-linear curve does best (−4.8%), because it falls back to the logistic beyond its data. The item mixture is erratic there, since it has no item difficulties beyond its training range. Floors and ceilings (+4.3%), complementary log-log (+17.0%) and isotonic (+21.8%) all extrapolate badly.
+- **Extrapolation separates them.** On later models, the piecewise-linear curve does best (−4.8%), because it falls back to the logistic beyond its data. The item mixture is erratic there, since it has no item difficulties beyond its training range. Isotonic extrapolates badly (+21.8%). A fitted floor and ceiling neither help nor hurt (−0.1%).
 - **The S-shape itself is right.** The shared shape ends up within 0.034 of the logistic everywhere. Departures from the logistic are specific to individual benchmarks, not a general problem with the shape.
 - **The real trade-off is spacing.** A curve that is free for each benchmark can absorb any stretch of the capability axis. Only the *order* of models is then identified, and the speed of progress comes from the pull toward the logistic. A shared shape keeps the spacing identified. A mixture with one item slope doesn't: in the joint fits above it keeps stretching too. Since accuracy differs so little, that is the main reason to pick one over another.
 
