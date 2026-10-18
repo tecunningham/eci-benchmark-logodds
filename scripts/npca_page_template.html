@@ -61,9 +61,9 @@ table.cv td,table.cv th{padding:3px 10px;border-bottom:1px solid var(--line);tex
 table.cv td:first-child,table.cv th:first-child{text-align:left}
 </style></head>
 <body><main>
-<h1>Nonparametric ECI: eight ways to fit a benchmark’s curve</h1>
-<p class="lede">Epoch's Capabilities Index assumes every benchmark score follows one S-shaped curve of capability: <i>sigmoid(slope × (capability − difficulty))</i>. That is a choice. Below, eight different curves are fitted to each benchmark, from ECI's logistic to curves of any monotone shape, and compared on scores they never saw. Model capabilities are held fixed, so only the curve differs. Further down, the free curve is fitted jointly with capability, with one and two factors.</p>
-<nav class="toc"><a href="#links">Curve options compared</a><a href="#curves">Benchmark curves</a><a href="#bend">All curves vs the sigmoid</a><a href="#cv">Held-out error</a><a href="#map">Two-dimensional map</a><a href="#rank">Ranks</a><a href="#resid">Residuals</a><a href="#frontier">Frontier by benchmark</a><a href="#method">Method</a><a href="index.html">← log-odds page</a></nav>
+<h1>Is AI progress accelerating? It depends on the shape of each benchmark’s curve</h1>
+<p class="lede">Epoch's Capabilities Index assumes every benchmark score follows one S-shaped curve of capability: <i>sigmoid(slope × (capability − difficulty))</i>. That is a choice. Below, eight different curves are fitted to each benchmark, from ECI's logistic to curves of any monotone shape, and compared on scores they never saw. Then each is fitted jointly with capability, to see how it changes the measured <b>speed and acceleration</b> of frontier progress. The curves roughly agree on the rate up to a year ago (12–15 ECI points a year). The curves that predict newer models best measure faster recent growth than ECI, but how much faster is not pinned down by the data.</p>
+<nav class="toc"><a href="#links">Curve options compared</a><a href="#accel">Is progress accelerating?</a><a href="#curves">Benchmark curves</a><a href="#bend">All curves vs the sigmoid</a><a href="#cv">Held-out error</a><a href="#map">Two-dimensional map</a><a href="#rank">Ranks</a><a href="#resid">Residuals</a><a href="#frontier">Frontier by benchmark</a><a href="#method">Method</a><a href="index.html">← log-odds page</a></nav>
 <h2 id="links" style="border-top:0;margin-top:14px">Curve options compared</h2>
 <p class="sub">Change in held-out error (RMSE in score units) relative to ECI's logistic; lower is better. Bars are 90% intervals from resampling models. <b>Random</b>: 5-fold over all <span id="lk_nr"></span> scores. <b>Later models</b>: curves fitted only on models released before <span id="lk_cut"></span>, then used to predict half of each later model's scores (<span id="lk_nf"></span> scores), which tests extrapolation.</p>
 <div class="two"><div class="card"><h3>Random held-out scores</h3><div id="lkr" class="plot" style="height:330px"></div></div><div class="card"><h3>Later models</h3><div id="lkf" class="plot" style="height:330px"></div></div></div>
@@ -72,6 +72,15 @@ table.cv td:first-child,table.cv th:first-child{text-align:left}
 <h3 style="margin:18px 0 4px;font-size:15px">Every option on one benchmark</h3>
 <div class="controls"><label class="ctl-label">Benchmark <select id="lksel"></select></label></div>
 <div class="card"><div id="lkplot" class="plot" style="height:430px"></div></div>
+
+<h2 id="accel">Is progress accelerating? It depends on the curve</h2>
+<p class="sub">Here each curve is fitted <i>jointly</i> with capability: curves and model positions alternate until they settle, with Claude 3.5 Sonnet = 130 and GPT-5 = 150 fixing the scale. Every option gives its own frontier (best capability to date, from GPT-4 on). The question is how fast it rose in the last 12 months (<span class="aw1"></span>) versus the 12 months before (<span class="aw0"></span>).</p>
+<div class="tiles" id="actiles"></div>
+<div class="two"><div class="card"><h3>Frontier capability under each curve</h3><p class="sub">Straight lines between record-setting models; shaded: the two 12-month windows. Dashed: Epoch's published ECI.</p><div id="acfront" class="plot" style="height:400px"></div></div>
+<div class="card"><h3>Growth, previous vs last 12 months</h3><p class="sub">ECI points per year. Hollow: previous 12 months; filled: last 12 months, with 90% interval from refits on resampled benchmarks. Right: share of resamples where growth sped up.</p><div id="acdumb" class="plot" style="height:400px"></div></div></div>
+<div class="two" style="margin-top:12px"><div class="card"><h3>Which answers settle?</h3><p class="sub">Last-12-month growth after each round of fitting. Solid lines settle. Dashed lines are curves free per benchmark: they keep stretching the top of the axis, so their number reflects the penalty and iteration count, not the data.</p><div id="acdrift" class="plot" style="height:380px"></div></div>
+<div class="card"><h3>Why: the logistic saturates too fast</h3><p class="sub">Later models' actual minus predicted score, on curves fitted to models released before <span class="acut"></span>, grouped by predicted score. Later models do better than predicted where scores are low and worse near the top.</p><div id="acbias" class="plot" style="height:380px"></div></div></div>
+<div class="notes" id="acnotes"></div>
 
 <h2 id="joint">Joint fits: free curves and a second factor</h2>
 <p class="sub">Here capability is re-estimated together with the curves, comparing ECI's logistic with the piecewise-linear monotone curve, with one or two factors per model.</p>
@@ -129,7 +138,7 @@ table.cv td:first-child,table.cv th:first-child{text-align:left}
 </div>
 </main>
 <script>
-const R=/*DATA*/,LK=/*LINKS*/;
+const R=/*DATA*/,LK=/*LINKS*/,AC=/*ACCEL*/;
 const $=s=>document.querySelector(s),EPS=0.01,lg=p=>{p=Math.min(Math.max(p,EPS),1-EPS);return Math.log(p/(1-p))},sig=z=>1/(1+Math.exp(-z));
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const M=R.models,B=R.b,[G0,G1]=R.grid,GRID=Array.from({length:Math.round(G1-G0)+1},(_,i)=>G0+i);
@@ -368,7 +377,7 @@ const sg=v=>(v>0?'+':v<0?'\u2212':'')+Math.abs(v).toFixed(1);
  const top=LK.per_b.slice().sort((a,b)=>a.monotone-b.monotone).slice(0,5).map(b=>short(b.name)+' ('+b.n+')').join(', ');
  $('#lknotes').innerHTML='<p><b>What this shows.</b> No curve shape beats the logistic by much: on random held-out scores the best (the item-difficulty mixture, '+sg(by.item_mixture.drandom[0])+'%, and the piecewise-linear monotone curve, '+sg(by.monotone.drandom[0])+'%) remove under 2% of the error. The gains come from heavily-scored benchmarks: '+top+'. The shapes split clearly on <i>later models</i>, where a curve must extrapolate. The piecewise-linear curve, which falls back to the logistic beyond its data, does best ('+sg(by.monotone.dforward[0])+'%). The item mixture has no item difficulties beyond its training range and is erratic. Floors and ceilings, the asymmetric complementary log-log and unsmoothed isotonic curves all extrapolate badly ('+sg(by.four_pl.dforward[0])+'%, '+sg(by.cloglog.dforward[0])+'%, '+sg(by.isotonic.dforward[0])+'%).</p>'+
   '<p><b>Is the S-shape itself right?</b> The <i>shared</i> option learns one free shape for all 60 benchmarks, each keeping its own slope and difficulty. It ends up within '+LK.shared.maxdev.toFixed(3)+' of the logistic everywhere and predicts as well, so the logistic is the right common shape. Departures are benchmark-specific.</p>'+
-  '<p><b>Spacing.</b> A curve free per benchmark (spline, piecewise linear, isotonic) can absorb any stretching of the capability axis, so with it only the <i>order</i> of models is identified, and the distances, hence the speed of progress, come from the pull towards the logistic. A shared shape keeps distances identified; a mixture with one item slope for every benchmark partly does. Given how small the accuracy differences are, that is the main ground for choosing.</p>'+
+  '<p><b>Spacing.</b> A curve free per benchmark (spline, piecewise linear, item mixture, isotonic) can absorb any stretching of the capability axis, so with it only the <i>order</i> of models is identified, and the distances, hence the speed of progress, come from the pull towards the logistic. A shared shape keeps distances identified; a mixture with one item slope for every benchmark does not (in the joint fits below it keeps stretching too). Given how small the accuracy differences are, that is the main ground for choosing, and it matters for acceleration (next section).</p>'+
   '<p><b>Setup.</b> Capability per model is ECI refit on the training scores only, so nothing leaks from test scores. The spline penalty (λ = '+by.logit_spline.par.lam+') and the mixture item slope and penalty (s = '+by.item_mixture.par.s+', λ = '+by.item_mixture.par.lam+') were chosen on the random folds, which flatters their random numbers slightly; the later-models test was not used for tuning. Code: <code>scripts/npca_links.py</code>.</p>';
  const ls=$('#lksel');LK.curves.map((c,i)=>[c,i]).sort((a,b)=>a[0].name.localeCompare(b[0].name)).forEach(([c,i])=>{const o=document.createElement('option');o.value=i;o.textContent=short(c.name)+' ('+c.n+' models)';ls.appendChild(o)});
  ls.value=LK.curves.findIndex(c=>c.name===LK.per_b.slice().sort((a,b)=>a.monotone-b.monotone)[0].name);
@@ -390,7 +399,55 @@ function drawLinkCurve(){
   .concat(LK.options.map(o=>({x:g,y:c.f[o.key],mode:'lines',name:o.label,line:{color:lkc(o.key),width:o.key==='logistic'?2.5:1.8,dash:o.key==='logistic'?'dash':'solid',shape:o.key==='isotonic'?'hv':'linear'},hovertemplate:o.label+': %{y:.1%}<extra></extra>'})));
  Plotly.react('lkplot',tr,L({showlegend:true,legend:{orientation:'h',y:-0.18,x:0,font:{size:11}},margin:{b:110},xaxis:{title:{text:'ECI (fit on all scores)',font:{size:12}}},yaxis:{title:{text:'score',font:{size:12}},tickformat:'.0%',range:[-0.03,1.03]}}),CFG);
 }
-function drawAll(){drawLinks();drawLinkCurve();drawGrid();drawDetail();drawBend();drawCV();drawMap();drawRank();drawHeat();drawFrontier()}
+// ---------- acceleration ----------
+const ACCOL={logistic:'var(--ref)',four_pl:'#8b3dff',cloglog:'#e8177d',shared:'#00a86b',monotone:'#1d64f2',logit_spline:'#00b4d8',monotone_weak:'#5b8def',monotone_free:'#9db8f5',monotone_q:'#ff7a00',item_mixture:'#f4a259'};
+const acc=k=>{const v=ACCOL[k];return v.startsWith('var')?css(v.slice(4,-1)):v};
+const fmtD=d=>new Date(d).toLocaleDateString('en-GB',{month:'short',year:'numeric',timeZone:'UTC'});
+(function(){
+ const [w0,w1,w2]=AC.windows;document.querySelectorAll('.aw0').forEach(e=>e.textContent=fmtD(w0)+'–'+fmtD(w1));document.querySelectorAll('.aw1').forEach(e=>e.textContent=fmtD(w1)+'–'+fmtD(w2));
+ document.querySelectorAll('.acut').forEach(e=>e.textContent=fmtD(LK.cut));
+ const V=Object.fromEntries(AC.variants.map(v=>[v.key,v])),P=AC.published,r=v=>v.toFixed(1);
+ const tile=(k,v,sub)=>'<div class="tile"><div class="k">'+k+'</div><div class="v">'+v+' <small>'+sub+'</small></div></div>';
+ $('#actiles').innerHTML=tile('Published ECI',r(P.prev)+' → '+r(P.last),'pts/yr, ×'+(P.last/P.prev).toFixed(2))+
+  tile('Shared free shape',r(V.shared.prev)+' → '+r(V.shared.last),'pts/yr, ×'+(V.shared.last/V.shared.prev).toFixed(2))+
+  tile('Piecewise-linear (npca)',r(V.monotone.prev)+' → '+r(V.monotone.last),'pts/yr, ×'+(V.monotone.last/V.monotone.prev).toFixed(2))+
+  tile('Free curves, weaker pull',Math.min(...['monotone_weak','monotone_free','monotone_q','item_mixture'].map(k=>V[k].last)).toFixed(0)+'–'+Math.max(...['monotone_weak','monotone_free','monotone_q','item_mixture'].map(k=>V[k].last)).toFixed(0),'pts/yr and still rising');
+ const S=AC.variants.filter(v=>v.settles),pa=k=>V[k].ci?Math.round(100*V[k].ci.p_accel)+'%':'';
+ $('#acnotes').innerHTML='<p><b>The curves roughly agree on the earlier rate</b>, about '+r(V.logistic.prev)+' points a year for the logistic (range '+r(Math.min(...S.map(v=>v.prev)))+'–'+r(Math.max(...S.map(v=>v.prev)))+'). <b>They disagree on the last year.</b> The logistic gives '+r(V.logistic.last)+' (sped up in '+pa('logistic')+' of resamples). The shared free shape, which keeps spacing identified, gives '+r(V.shared.last)+' ('+pa('shared')+'). The piecewise-linear curve, the best on later models, gives '+r(V.monotone.last)+' ('+pa('monotone')+'). The complementary log-log, which fits worse, gives '+r(V.cloglog.last)+' and no clear speed-up.</p>'+
+  '<p><b>The direction is robust; the size is not.</b> Every curve more flexible than the logistic puts the recent frontier higher, so measures more acceleration, never less. But a curve that is free per benchmark does not pin down spacing: with a weaker pull towards the logistic, or knots placed differently, the fit keeps stretching the top of the axis (right-hand chart) and the last-year rate climbs past '+Math.floor(Math.min(...['monotone_weak','monotone_free','monotone_q','item_mixture'].map(k=>V[k].last)))+' points a year without settling. Only curves tied to a common shape (logistic, floor and ceiling, complementary log-log, the shared shape) give a number the data determine; among them the shared shape is the most flexible.</p>'+
+  '<p><b>Mechanism.</b> Fitted to older models, logistic curves rise too steeply: later models score above prediction where predicted scores are low and below it near the top. A benchmark therefore saturates more slowly than the logistic assumes, so the last few points towards 100% take more capability than ECI credits, and the models that took them (the past year’s frontier) sit higher. The piecewise-linear curve corrects part of this, which is why it predicts later models better and why it reads more acceleration.</p>'+
+  '<p><b>Setup.</b> '+AC.iters+' rounds of fitting from published ECI; bootstrap: '+AC.boot+' refits ('+AC.boot_iters+' rounds) on benchmarks resampled with replacement, for the curves that settle. The 12-month windows end at the data snapshot; the frontier is flat after its last record. Isotonic curves are left out: step functions give a model no direction to move in. Code: <code>scripts/npca_accel.py</code>.</p>';
+})();
+function drawAccel(){
+ const ink=css('--ink'),mut=css('--muted'),band=css('--band'),[w0,w1,w2]=AC.windows;
+ const shapes=[[w0,w1],[w1,w2]].map(([a,b],k)=>({type:'rect',xref:'x',yref:'paper',x0:a,x1:b,y0:0,y1:1,fillcolor:band,opacity:k?1:.5,line:{width:0},layer:'below'}));
+ const S=AC.variants.filter(v=>v.settles);
+ const fr=[{x:AC.published.frontier.map(f=>f[0]),y:AC.published.frontier.map(f=>f[2]),text:AC.published.frontier.map(f=>f[1]),mode:'lines',name:'Published ECI',line:{color:mut,width:2,dash:'dash'},hovertemplate:'Published ECI<br><b>%{text}</b> %{y:.1f}<extra></extra>'}]
+  .concat(S.map(v=>({x:v.frontier.map(f=>f[0]),y:v.frontier.map(f=>f[2]),text:v.frontier.map(f=>f[1]),mode:'lines+markers',name:v.label,line:{color:acc(v.key),width:v.key==='logistic'?3:2},marker:{size:5},hovertemplate:v.label+'<br><b>%{text}</b> %{y:.1f}<extra></extra>'})));
+ Plotly.react('acfront',fr,L({showlegend:true,legend:{orientation:'h',y:-0.15,x:0,font:{size:11}},margin:{b:90},shapes,xaxis:{type:'date',range:['2024-01-01',w2]},yaxis:{title:{text:'frontier capability (ECI scale)',font:{size:12}},range:[125,Math.max(...S.map(v=>v.frontier[v.frontier.length-1][2]))+3]}}),CFG);
+ const O=AC.variants.slice().reverse(),lab=O.map(v=>v.label+(v.settles?'':' *'));
+ const nar=innerWidth<640,wrap=t=>nar?t.replace(/(.{1,18})(\s|$)/g,'$1<br>').replace(/<br>$/,''):t;
+ $('#acdumb').style.height=nar?'600px':'400px';
+ Plotly.react('acdumb',[
+  {x:O.flatMap(v=>[v.prev,v.last,null]),y:O.flatMap((v,i)=>[wrap(lab[i]),wrap(lab[i]),null]),mode:'lines',line:{color:mut,width:1},hoverinfo:'skip'},
+  {x:O.flatMap(v=>v.ci?[v.ci.last[0],v.ci.last[1],null]:[null,null,null]),y:O.flatMap((v,i)=>[wrap(lab[i]),wrap(lab[i]),null]),mode:'lines',line:{color:css('--pos'),width:5},opacity:.35,hoverinfo:'skip'},
+  {x:O.map(v=>v.prev),y:O.map((v,i)=>wrap(lab[i])),mode:'markers',marker:{size:9,color:css('--bg'),line:{color:O.map(v=>acc(v.key)),width:2}},hovertemplate:'previous 12 months: %{x:.1f}<extra></extra>'},
+  {x:O.map(v=>v.last),y:O.map((v,i)=>wrap(lab[i])),mode:'markers',marker:{size:10,color:O.map(v=>acc(v.key))},
+   customdata:O.map(v=>v.ci?'<br>90%: '+v.ci.last[0].toFixed(1)+' to '+v.ci.last[1].toFixed(1)+'<br>sped up in '+Math.round(100*v.ci.p_accel)+'% of resamples':'<br>still rising with more fitting'),
+   hovertemplate:'last 12 months: %{x:.1f}%{customdata}<extra></extra>'},
+  {x:O.map(v=>Math.max(v.last,v.prev,v.ci?v.ci.last[1]:0)+0.8),y:O.map((v,i)=>wrap(lab[i])),mode:'text',text:O.map(v=>v.ci?Math.round(100*v.ci.p_accel)+'%':'still rising'),textposition:'middle right',textfont:{size:10,color:mut},hoverinfo:'skip'}],
+  L({margin:{l:nar?120:290,r:30,t:6,b:40},shapes:[{type:'line',xref:'x',yref:'paper',x0:AC.published.last,x1:AC.published.last,y0:0,y1:1,line:{color:mut,dash:'dash',width:1}}],
+   xaxis:{title:{text:'ECI points per year',font:{size:12}},range:[8,Math.max(...AC.variants.map(v=>Math.max(v.last,v.ci?v.ci.last[1]:0)))+9]},yaxis:{automargin:true,tickfont:{color:ink,size:nar?10:11.5}}}),CFG);
+ Plotly.react('acdrift',AC.variants.map(v=>({x:v.path.map((_,i)=>i+1),y:v.path.map(p=>p[1]),mode:'lines',name:v.label,line:{color:acc(v.key),width:v.settles?2.4:1.8,dash:v.settles?'solid':'dash'},hovertemplate:v.label+'<br>round %{x}: %{y:.1f} pts/yr<extra></extra>'})),
+  L({showlegend:false,xaxis:{title:{text:'round of fitting (curves ↔ positions)',font:{size:12}},range:[0,AC.iters*1.05]},yaxis:{title:{text:'last-12-month growth (pts/yr)',font:{size:12}}},
+   shapes:[{type:'line',xref:'paper',x0:0,x1:1,y0:AC.published.last,y1:AC.published.last,line:{color:mut,dash:'dot',width:1}}],
+   annotations:(()=>{const e=AC.variants.map(v=>({v,y:v.path[v.path.length-1][1]})).sort((a,b)=>a.y-b.y);e.forEach((o,k)=>o.ly=k?Math.max(o.y,e[k-1].ly+1.5):o.y);return e})().map(({v,y,ly})=>({x:v.path.length,y,ay:ly,ayref:'y',ax:v.path.length+4,axref:'x',showarrow:true,arrowwidth:.6,arrowcolor:acc(v.key),arrowhead:0,text:v.label.replace('Piecewise-linear','PL').replace('knots at model quantiles (pull 10)','quantile knots').replace(' (npca, pull 10)',' (npca)').replace('One free shape shared by all benchmarks','Shared shape').replace("Logistic (ECI's curve)",'Logistic'),xanchor:'left',font:{size:9.5,color:acc(v.key)}})),margin:{r:150}}),CFG);
+ const bl=['logistic','monotone'],bn={logistic:"Logistic (ECI's curve)",monotone:'Piecewise-linear (npca)'};
+ Plotly.react('acbias',bl.map(k=>({x:AC.bias[k].map(b=>Math.round(b.lo*100)+'–'+Math.round(b.hi*100)+'%'),y:AC.bias[k].map(b=>b.resid),type:'bar',name:bn[k],marker:{color:acc(k)},
+   text:AC.bias[k].map(b=>'n = '+b.n),textposition:'none',hovertemplate:bn[k]+'<br>predicted %{x}: actual − predicted %{y:.3f}<br>%{text}<extra></extra>'})),
+  L({barmode:'group',showlegend:true,legend:{orientation:'h',y:-0.2,x:0},margin:{b:80},xaxis:{title:{text:'predicted score',font:{size:12}}},yaxis:{title:{text:'actual − predicted',font:{size:12}},zeroline:true,zerolinecolor:ink}}),CFG);
+}
+function drawAll(){drawLinks();drawAccel();drawLinkCurve();drawGrid();drawDetail();drawBend();drawCV();drawMap();drawRank();drawHeat();drawFrontier()}
 sel=B.reduce((a,b)=>b.gain>a.gain?b:a,B[0]).i;
 if(typeof Plotly==='undefined'){document.querySelectorAll('.plot').forEach(e=>e.textContent='Chart library failed to load.');drawGrid()}
 else{drawAll();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll)}

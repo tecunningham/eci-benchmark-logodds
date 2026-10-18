@@ -127,7 +127,7 @@ OPTIONS = [  # key, label, fitter, extra parameters per benchmark, keeps the spa
     ("cloglog", "Complementary log-log", cloglog, "2", "yes"),
     ("shared", "One free shape shared by all benchmarks", None, "2 (+ 1 shared curve)", "yes"),
     ("logit_spline", "Monotone spline in logit space", logit_spline, "8, penalised", "only through the penalty"),
-    ("item_mixture", "Mixture of item difficulties", item_mixture, "30 weights, penalised", "partly (shared item slope)"),
+    ("item_mixture", "Mixture of item difficulties", item_mixture, "30 weights, penalised", "no (keeps stretching in joint fits)"),
     ("monotone", "Piecewise-linear monotone (npca)", monotone, "28, penalised", "only through the pull to the logistic"),
     ("isotonic", "Isotonic (any step function)", isotonic, "up to n", "no"),
 ]
