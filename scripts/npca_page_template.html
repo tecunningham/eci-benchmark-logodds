@@ -397,13 +397,15 @@ function drawLinks(){
    L({margin:{l:nar?120:250,r:14,t:6,b:40},xaxis:{title:{text:'change in RMSE vs logistic (%)',font:{size:12}},zeroline:true,zerolinecolor:css('--ink'),zerolinewidth:1.5},yaxis:{automargin:true,tickfont:{color:css('--ink'),size:nar?10:12}}}),CFG)});
 }
 let lkScale='score';
+// curves shown by default; the rest start hidden (click a legend entry to show or hide any curve)
+const lkOn=new Set(['logistic','four_pl','monotone']);
 document.querySelectorAll('#lkscale button').forEach(b=>b.onclick=()=>{lkScale=b.dataset.v;document.querySelectorAll('#lkscale button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawLinkCurve()});
 function drawLinkCurve(){
  // log-odds view: scores and curves pinned to 1%-99% like the main chart, so a logistic is a straight line
  const c=LK.curves[+$('#lksel').value],g=c.f.logistic.map((_,j)=>c.g0+j),lo=lkScale==='logodds',T=v=>lo?lg(v):v;
  const pct=[0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99];
  const tr=[{x:c.pts.map(p=>p[0]),y:c.pts.map(p=>T(p[1])),text:c.pts.map(p=>p[2]),customdata:c.pts.map(p=>p[1]),mode:'markers',marker:{size:6,color:areaCol(c.area),opacity:.75},name:'scores',hovertemplate:'<b>%{text}</b><br>ECI %{x:.1f}, score %{customdata:.1%}<extra></extra>'}]
-  .concat(LK.options.map(o=>({x:g,y:c.f[o.key].map(T),customdata:c.f[o.key],mode:'lines',name:o.label,line:{color:lkc(o.key),width:o.key==='logistic'?2.5:1.8,dash:o.key==='logistic'?'dash':'solid',shape:o.key==='isotonic'?'hv':'linear'},hovertemplate:o.label+': %{customdata:.1%}<extra></extra>'})));
+  .concat(LK.options.map(o=>({x:g,y:c.f[o.key].map(T),customdata:c.f[o.key],mode:'lines',name:o.label,line:{color:lkc(o.key),width:o.key==='logistic'?2.5:1.8,dash:o.key==='logistic'?'dash':'solid',shape:o.key==='isotonic'?'hv':'linear'},hovertemplate:o.label+': %{customdata:.1%}<extra></extra>',key:o.key,visible:lkOn.has(o.key)?true:'legendonly'})));
  Plotly.react('lkplot',tr,L({showlegend:true,legend:{orientation:'h',y:-0.18,x:0,font:{size:11}},margin:{b:110},xaxis:{title:{text:'ECI (fit on all scores)',font:{size:12}}},
   yaxis:lo?{title:{text:'score (log-odds scale)',font:{size:12}},range:[-5,5],tickvals:pct.map(p=>Math.log(p/(1-p))),ticktext:pct.map(p=>(p*100)+'%')}:{title:{text:'score',font:{size:12}},tickformat:'.0%',range:[-0.03,1.03]}}),CFG);
 }
@@ -476,6 +478,8 @@ function drawAccel(){
 function drawAll(){drawLinks();drawAccel();drawLinkCurve();drawGrid();drawDetail();drawBend();drawCV();drawMap();drawRank();drawHeat();drawFrontier()}
 sel=B.reduce((a,b)=>b.gain>a.gain?b:a,B[0]).i;
 if(typeof Plotly==='undefined'){document.querySelectorAll('.plot').forEach(e=>e.textContent='Chart library failed to load.');drawGrid()}
-else{drawAll();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll)}
+else{drawAll();
+ $('#lkplot').on('plotly_legendclick',e=>{const k=e.data[e.curveNumber].key;if(!k)return true;lkOn.has(k)?lkOn.delete(k):lkOn.add(k);drawLinkCurve();return false});
+ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll)}
 </script>
 </body></html>
