@@ -2,6 +2,26 @@
 
 > **Working on this repo?** Start with [`NEXT_STEPS.md`](NEXT_STEPS.md): current findings, open questions and a map of the code.
 
+## Key takeaways: is ECI measuring benchmark-score acceleration correctly?
+
+1. **The arithmetic is right.** Our reimplementation of Epoch's objective matches theirs term for term ([`scripts/eci_fit.py`](scripts/eci_fit.py) against eci-public's `fitting.py`). It reproduces published ECI to within 0.06 points, mean 0.006. A tightly converged scipy fit agrees to 1e-4, and the in-browser solver agrees with the Python one to 1e-13. Any problem is in the model's assumptions, not the computation.
+2. **ECI's own speed-up depends on where the 12-month windows end.** Published frontier ECI rose 13.2 → 17.1 points a year (previous 12 months → last 12) with windows ending on the 1 Oct 2026 snapshot. End them on 1 Sep instead and it is 15.0 → 14.7; on 1 Aug, 16.8 → 13.6. The last year's rate is set mainly by a cluster of September 2026 records and by frontier models scored on only 4–7 benchmarks. A running maximum of noisy estimates is also biased upward. So "ECI shows acceleration" is not established either way.
+3. **The logistic curve systematically mispredicts newer models.** Fit curves on models released before Sep 2025, then predict half of each later model's scores from the other half ([`scripts/npca_forward.py`](scripts/npca_forward.py)). Later models score 13 points *above* the logistic's prediction where it predicts under 20%, and 10 points *below* where it predicts over 80%.
+   - Benchmarks saturate more slowly than a logistic assumes, so the last points toward 100% need more capability than ECI credits.
+   - ECI's least squares in score units makes these near-ceiling misses cheap: predicting 95% for a 99% score costs 0.04 in score units but 1.6 in log-odds.
+   - Across three random splits, the piecewise-linear curves predict later models 3–17% better, improving steadily as the pull toward the logistic weakens. A floor and ceiling help by about 1%. The one shared free shape is no better (+8.5%, 90% interval −1.8% to +21%), so the gain comes from benchmark-specific shapes.
+4. **Relaxing the curve always makes recent growth look faster than ECI says.** For every window end from June to October 2026, last-year growth is higher than under the logistic:
+   - logistic + floor + ceiling: +0.8 to +1.0 points a year
+   - one shared free shape: +1.0 to +2.3
+   - the piecewise-linear curve (pull 10): +2.5 to +4.0
+   - weaker pulls: +7 to +14
+
+   The ratio of last-year to previous-year growth also barely moves when the upper anchor is changed (1.54 for the piecewise-linear curve against 1.29 for the logistic). The *direction* is robust: ECI's logistic understates recent gains relative to curves that fit the data better.
+5. **But the size of the correction is not identified.** Above GPT-5 (fixed at 150), nothing pins the spacing between models except the curve's shape.
+   - The curves the forward test favours (weak pulls of 1 and 0.1) never settle in joint fits: last-year growth is still rising at 28–31 points a year after 80 rounds.
+   - Random cross-validation is flat across penalty settings and nearly blind to spacing, so the piecewise-linear curve's 21 points a year reflects a chosen pull, not an estimate.
+   - The most defensible flexible number is the shared free shape's 19.2 (against 17.0 for the logistic). The honest summary: ECI probably understates how fast frontier capability rose in the last year, by an amount these data can't pin down, and whether growth is *accelerating* at all depends on the measurement window.
+
 Epoch AI's [Capabilities Index](https://epoch.ai/eci) (ECI) fits one capability number per model from ~60 benchmarks, using
 
     score = sigmoid(slope_b × (ECI_model − difficulty_b))
@@ -14,6 +34,7 @@ so on a log-odds scale every benchmark should rise linearly with ECI. These char
   - **Curve:** shows the frontier under any benchmark curve whose joint fit settles: Epoch's logistic, logistic plus floor and ceiling, a shared free shape, or the piecewise-linear curve. The method is in the nonparametric section below.
   - **Scale:** *Scores in log-odds* is the original view. *Capability each score implies* maps every score back through its benchmark's own fitted curve onto the frontier's axis. For the logistic, that is each benchmark's log-odds rescaled by its own slope and difficulty. Before mapping, each score is pinned to 1%–99% of the way from its curve's floor to its ceiling, as the log-odds view pins scores to 1%–99%. Pinned scores are drawn hollow. Without the pin, a score at or past a fitted floor or ceiling, which the curve can't invert, would land at the end of the range; this mattered most for logistic + floor + ceiling.
   - **From:** zooms in by moving the earliest date shown.
+  - **Hover** a score to see the capability it implies and its **weight in that model's capability**. Least squares places a model where its misses balance; linearised, that makes its capability a weighted average of the capabilities its scores imply. Each score's weight is its curve's slope at the model's capability, squared, and the hover shows its share of the model's total. Scores where the curve is flat, near 0% or 100%, barely count. Claude Opus 5.5's 87.5% on GPQA diamond implies 151.6 but carries under 0.1% of its ECI, because the logistic has already saturated at 167. These weights rebuild every model's capability from its implied values to within 0.12 points (median).
 
   The two fixed points of the scale, Claude 3.5 Sonnet ≡ 130 and GPT-5 ≡ 150, are marked under every curve. The link records every setting, e.g. `#lab=OpenAI&curve=monotone&scale=implied&from=2025-01-01`.
 - **Right axis:** each benchmark's score for the models that set a new frontier ECI, as log-odds, labelled in percent. Colour is the benchmark's area.
@@ -56,7 +77,31 @@ Intervals come from 100 refits on benchmarks resampled with replacement. They're
 **Which benchmarks drive it?** [`scripts/curve_fits.py`](scripts/curve_fits.py) refits both curves with each benchmark left out in turn. The extra last-year growth of the piecewise-linear curve over the logistic (4.0 points a year) survives every single drop (3.6–5.9), so no one benchmark carries it.
 - **Largest contributors:** HellaSwag (+0.45), ProofBench (+0.41), SimpleBench (+0.35), PIQA (+0.34), GPQA diamond (+0.31).
 - **Pulling the other way:** FrontierMath T1–3 v2 and OTIS Mock AIME.
-- **Where each benchmark's own free curve places last year's models highest relative to the logistic:** near-saturated benchmarks with many recent scores, chiefly OTIS Mock AIME (+2.2 ECI points), GPQA diamond (+2.0) and ARC-AGI (+1.3). GPQA diamond is the only benchmark with a sizeable push toward more acceleration on both measures.
+- **Where each benchmark's own free curve places last year's models highest relative to the logistic:** the largest shifts are VPCT (+5.6 ECI points, only 5 recent scores), Mystery Game Puzzles (+3.4), EBR-bench (+2.3) and FrontierMath T4 v2 (+2.2), all low-scoring benchmarks. Among heavily scored, near-saturated ones, they are OTIS Mock AIME (+2.2), GPQA diamond (+2.0) and ARC-AGI (+1.3). The shift is measured on the piecewise-linear fit's own, stretched axis, so it mixes each benchmark's curve shape with the overall stretch and is biased upward. GPQA diamond is the only benchmark with a sizeable push toward more acceleration on both measures.
+
+### Forward test of the joint fits: which curve predicts models above the top anchor?
+
+[`scripts/npca_forward.py`](scripts/npca_forward.py) is the one held-out test that touches the spacing above GPT-5:
+1. Run the joint fit (curves and positions, 80 rounds) on models released before 2025-09-01 only (1569 scores), starting from ECI refit on those scores. Both anchors are in this set.
+2. Place each of the 93 later models from a random half of its scores, with the curves frozen. The frozen piecewise-linear curves are refit on knots reaching 80 points above the top training model, so they can extrapolate rather than go flat.
+3. Predict the other half (473 scores, on benchmarks with at least 5 training scores).
+
+| Curve | RMSE | vs logistic (90% interval) | Later minus predicted, where predicted < 20% | where predicted > 80% | Last-12-month growth, full joint fit |
+|---|---|---|---|---|---|
+| Logistic (ECI's curve) | 0.1748 | +0.0% (+0.0 to +0.0) | +0.131 | -0.100 | 17.03 |
+| Logistic + floor + ceiling | 0.1738 | -0.6% (-1.6 to +0.2) | +0.128 | -0.080 | 18.03 |
+| One free shape shared by all benchmarks | 0.1897 | +8.5% (-1.8 to +21.3) | +0.165 | -0.027 | 19.19 |
+| Piecewise-linear, pull 30 | 0.1701 | -2.7% (-4.6 to -0.6) | +0.126 | -0.078 |  |
+| Piecewise-linear, pull 10 (default) | 0.1662 | -4.9% (-8.0 to -2.3) | +0.111 | -0.070 | 21.04 |
+| Piecewise-linear, pull 3 | 0.1632 | -6.7% (-8.9 to -3.9) | +0.104 | -0.057 |  |
+| Piecewise-linear, pull 1 | 0.1588 | -9.2% (-11.8 to -6.4) | +0.087 | -0.050 | 27.69 |
+| Piecewise-linear, pull 0.1 | 0.1578 | -9.8% (-15.2 to -4.2) | +0.100 | -0.080 | 31.15 |
+
+- **Two other random splits** give the same ordering (logistic → pull 0.1): −0.7/−1.5% for floor + ceiling, −3.5/−4.2% for pull 10, −11.3/−14.6% for pull 1, −13.4/−17.4% for pull 0.1.
+- **The forward test favours the weakest pulls**, and those are exactly the curves whose joint fits never settle. It therefore says the logistic's spacing above 150 is too compressed, without pinning the right spacing.
+- **Not a measure of growth:** frontier growth computed from the forward-placed later models comes out at 60–80 points a year for every curve, because placing a model from half its scores, past the training range, is too noisy. It is stored in the json but shouldn't be read as a growth estimate.
+
+Rebuild: `python npca_forward.py` (about 6 minutes on 3 cores) → `data/npca_forward.json`.
 
 Rebuild (about 20 minutes on 8 cores; `curve_fits.py` another 6):
 
@@ -124,12 +169,12 @@ ECI is a rank-1 logistic PCA of the model × benchmark matrix. [`scripts/npca_fi
 
     score_mb = g_b(u_m · dir_b),   g_b nondecreasing,   dir_b = (cos α_b, sin α_b)
 
-- **Monotone link.** Each benchmark's curve `g_b` can take any monotone shape. It is piecewise linear with nonnegative rises, fit by NNLS, penalised for curvature and shrunk towards that benchmark's own sigmoid. The penalties are chosen by 5-fold CV.
+- **Monotone link.** Each benchmark's curve `g_b` can take any monotone shape. It is piecewise linear with nonnegative rises, fit by NNLS, penalised for curvature and shrunk towards that benchmark's own sigmoid. The penalties (smoothness 30, pull 10) sit near the minimum of a flat 5-fold CV surface ([`scripts/npca_tune.py`](scripts/npca_tune.py)). Treat them as a choice, not an estimate.
 - **Two factors.** Each model is a point in the plane and each benchmark a direction.
 
 All four combinations of sigmoid or monotone curve, with one or two factors, are fit with ECI's squared-error objective and compared on held-out scores:
 - **Random:** 5-fold over cells.
-- **Forward:** curves are fit on models released before Sep 2025; each later model is placed from half of its scores and the other half are predicted.
+- **Forward:** curves are fit on models released before Sep 2025; each later model is placed from half of its scores and the other half are predicted. Caveat: in this script the frozen curves are flat beyond the training range, so no later model can be placed above about 152. This column therefore says nothing about spacing above GPT-5. [`scripts/npca_forward.py`](scripts/npca_forward.py) (below) is the corrected test.
 
 Results (RMSE in score units):
 
@@ -150,6 +195,7 @@ Rebuild the joint fits (about 15 minutes on 4 cores; also needs `scipy`):
 ```bash
 cd scripts
 python npca_build.py        # fits, CV, bootstrap -> data/npca.json
+python npca_tune.py         # optional: reproduce the CV behind npca_fit.py's penalties and priors (prints only, ~35 min)
 python npca_figure.py       # -> figures/npca_curves.png
 python npca_build_page.py   # npca_page_template.html + npca.json -> ../npca.html
 ```

@@ -3,6 +3,11 @@
 For every option whose joint fit settles (npca_accel.py), refit capability jointly with the curves (same
 procedure, 80 rounds from published ECI) and store
   theta[m]        capability per model (ECI scale; Claude 3.5 Sonnet = 130, GPT-5 = 150)
+  w[b][i]         slope of benchmark b's fitted curve at the capability of the i-th score's model (score per
+                  capability point). A score's weight in its model's capability is w^2 over the sum of w^2 across
+                  that model's scores: linearised, least squares places a model at the w^2-weighted average of the
+                  capabilities its scores imply. The dashboard shows it on hover. `--weights-only` adds w to an
+                  existing curve_fits.json from its stored theta, without refitting.
   imp[b][i]       capability implied by the i-th score of benchmark b (same order as eci_data.json):
                   the score mapped back through that benchmark's own fitted curve, after pinning it to 1%-99% of
                   the way from the curve's floor to its ceiling. For curves running from 0 to 1 that is the
@@ -62,6 +67,25 @@ def implied(curve, ys, lo, hi):
     return out, cen
 
 
+def weights(curves, th):
+    """Slope of each benchmark's curve at each scored model's capability (central difference, +-0.5 points)."""
+    out = []
+    for b, bd in enumerate(RAW["b"]):
+        tm = th[[q[0] for q in bd["p"]]]
+        out.append([float(f"{x:.3g}") for x in curves[b](tm + 0.5) - curves[b](tm - 0.5)])
+    return out
+
+
+def add_weights():
+    C = json.load(open(ROOT / "data" / "curve_fits.json"))
+    for v in C["variants"]:
+        _, _, opt, par, _ = next(x for x in A.VARIANTS if x[0] == v["key"])
+        th = np.array(v["theta"])
+        v["w"] = weights(A.curves_for(opt, par, th, NB.MI, NB.BI, NB.Y, NB.NB), th)
+    json.dump(C, open(ROOT / "data" / "curve_fits.json", "w"), separators=(",", ":"))
+    print("added w to data/curve_fits.json")
+
+
 def fit_variant(key):
     _, label, opt, par, _ = next(v for v in A.VARIANTS if v[0] == key)
     th, sse, _ = A.joint(opt, par, NB.MI, NB.BI, NB.Y, NB.NB, A.ITERS)
@@ -72,7 +96,8 @@ def fit_variant(key):
         o, c = implied(curves[b], ys, th.min() - 40, th.max() + 40)
         imp.append([round(float(x), 2) for x in o]); cen.append(c)
     s = A.stats(th)
-    return dict(key=key, label=label, theta=[round(float(x), 2) for x in th], imp=imp, cen=cen,
+    wt = weights(curves, th)
+    return dict(key=key, label=label, theta=[round(float(x), 2) for x in th], imp=imp, cen=cen, w=wt,
                 rmse=round(float(np.sqrt(sse / len(NB.Y))), 4), prev=round(s["prev"], 2), last=round(s["last"], 2))
 
 
@@ -155,6 +180,9 @@ def implied_shift():
 
 
 if __name__ == "__main__":
+    if "--weights-only" in sys.argv:
+        add_weights()
+        sys.exit()
     if "--shift-only" not in sys.argv:
         main(leverage="--no-leverage" not in sys.argv,
              only=sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None)

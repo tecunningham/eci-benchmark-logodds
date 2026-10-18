@@ -105,7 +105,11 @@ const M=RAW.models.map(([m,l,d,e,lo,hi])=>({m,l,d,pub:e,plo:lo,phi:hi,e,lo,hi,sh
 let slope=RAW.slope,refit=false;
 // curve: which benchmark curve the capabilities come from ('eci' = Epoch's logistic: published, or refit on chosen benchmarks)
 // scale: benchmark lines in log-odds, or as the capability each score implies through its benchmark's fitted curve
-let curve='eci',scale='logodds',FROM=RAW.start,IMP=CF.published.imp,CEN=CF.published.cen;
+let curve='eci',scale='logodds',FROM=RAW.start,IMP=CF.published.imp,CEN=CF.published.cen,GD=null;
+// weight of each score in its model's capability: the slope of its benchmark's curve at the model's capability.
+// Least squares places a model where its scores' misses balance; linearised, its capability is an average of the
+// capabilities its scores imply, each weighted by that slope squared. Share = slope^2 / sum over the model's scores in the fit.
+const logiSlopes=(sl,ed,e)=>B.map(d=>d.p.map(q=>{const a=sl[d.k],x=e(q[0]);if(!(a>0)||!Number.isFinite(x))return 0;const z=1/(1+Math.exp(-a*(x-ed[d.k])));return a*z*(1-z)}));
 const CURVES=Object.fromEntries(CF.variants.map(v=>[v.key,v]));
 const SHORT={four_pl:'logistic + floor + ceiling',shared:'shared free shape',monotone:'piecewise-linear'};
 const curveName=()=>curve==='eci'?'ECI':SHORT[curve]||CURVES[curve].label.toLowerCase();
@@ -127,8 +131,13 @@ function growth(E){
 function derive(){
  OV=frontier(M.filter(o=>o.shown&&Number.isFinite(o.e)));
  const mine=new Set(M.map((o,i)=>i).filter(i=>M[i].shown&&Number.isFinite(M[i].e)&&(!lab||M[i].l===lab))),F=frontier(M.filter((o,i)=>mine.has(i))),fs=new Set(F);
- // point: [date, log-odds, score, model, implied capability, pinned at floor/ceiling in log-odds view, ... in implied view]
- const pt=(i,q,d)=>[M[i].d,q[1],q[2],M[i].m,IMP[d.k][q[3]],CF.published.cen[d.k][q[3]],CEN[d.k][q[3]]];
+ // point: [date, log-odds, score, model, implied capability, pinned at floor/ceiling in log-odds view, ... in implied view,
+ //         weight text: this score's share of its model's capability]
+ const inFit=d=>curve!=='eci'||d.on,W2=M.map(()=>0),NS=M.map(()=>0);
+ if(GD)B.forEach(d=>{if(inFit(d))d.p.forEach((q,j)=>{W2[q[0]]+=GD[d.k][j]**2;NS[q[0]]++})});
+ const wtxt=(i,d,j)=>{if(!GD||!inFit(d)||!(W2[i]>0))return '';const sh=GD[d.k][j]**2/W2[i]*100;
+  return '<br>Weight in '+M[i].m.replace(/</g,'')+'’s '+(curve==='eci'?'ECI':'capability')+': '+(sh<0.05?'<0.1':sh<0.95?sh.toFixed(1):sh.toFixed(0))+'% (equal share would be '+(100/NS[i]).toFixed(0)+'% of '+NS[i]+' scores)'};
+ const pt=(i,q,d)=>[M[i].d,q[1],q[2],M[i].m,IMP[d.k][q[3]],CF.published.cen[d.k][q[3]],CEN[d.k][q[3]],wtxt(q[0],d,q[3])];
  let nf=0,nall=0,nb=0;
  // benchmarks left out of the fit are still drawn (faded) but not counted
  B.forEach(d=>{d.fr=[];d.all=[];d.p.forEach(q=>{if(!mine.has(q[0]))return;if(d.on)nall++;if(fs.has(M[q[0]])){d.fr.push(pt(q[0],q,d));if(d.on)nf++}else d.all.push(pt(q[0],q,d))});if(d.on&&d.fr.length)nb++});
@@ -170,9 +179,10 @@ D.areas.forEach(a=>{
 document.querySelectorAll('[data-fit]').forEach(b=>b.onclick=()=>{const m=b.dataset.fit;B.forEach(d=>d.on=m==='all'||(m==='since2023'&&(d.rel||'')>='2023'));changed()});
 const rows=[];B.forEach(d=>d.p.forEach(q=>rows.push([q[0],d.k,q[2]])));
 const LOW=M.findIndex(o=>o.m===FIT.low[0]),HIGH=M.findIndex(o=>o.m===FIT.high[0]),WIN=B.findIndex(d=>d.name===FIT.anchor);
-function setPublished(){M.forEach(o=>{o.e=o.pub;o.lo=o.plo;o.hi=o.phi});slope=RAW.slope;refit=false;IMP=CF.published.imp;CEN=CF.published.cen}
+function setPublished(){M.forEach(o=>{o.e=o.pub;o.lo=o.plo;o.hi=o.phi});slope=RAW.slope;refit=false;IMP=CF.published.imp;CEN=CF.published.cen;
+ GD=logiSlopes(CF.published.slope,CF.published.edi,i=>M[i].pub)}
 function runFit(){
- if(curve!=='eci'){const v=CURVES[curve];M.forEach((o,i)=>{o.e=v.theta[i];o.lo=o.hi=null});slope=RAW.slope;refit=false;IMP=v.imp;CEN=v.cen;
+ if(curve!=='eci'){const v=CURVES[curve];M.forEach((o,i)=>{o.e=v.theta[i];o.lo=o.hi=null});slope=RAW.slope;refit=false;IMP=v.imp;CEN=v.cen;GD=v.w;
   return v.label+': capability re-estimated jointly with this curve on all '+B.length+' benchmarks (method on the <a href="npca.html">nonparametric page</a>). Refits on a subset of benchmarks use the logistic, so choose the ECI curve to use them.'}
  const inc=B.filter(d=>d.on).map(d=>d.k);
  if(inc.length===B.length){setPublished();return 'Epoch’s published ECI, fitted on all '+B.length+' benchmarks, with its bootstrap 90% intervals.'}
@@ -184,6 +194,7 @@ function runFit(){
   lowModel:LOW,highModel:HIGH,low:FIT.low[1],high:FIT.high[1],reg:FIT.reg,clip:FIT.clip});
  M.forEach((o,i)=>{o.e=r.eci[i];o.lo=o.hi=null});
  IMP=B.map(d=>d.on?d.p.map(q=>r.edi[d.k]+lg01(q[2])/r.slope[d.k]):CF.published.imp[d.k]);CEN=CF.published.cen;
+ GD=logiSlopes(B.map(d=>d.on?r.slope[d.k]:0),B.map(d=>d.on?r.edi[d.k]:0),i=>M[i].e);
  const sl=inc.map(k=>r.slope[k]).sort((a,b)=>a-b);slope=sl.length%2?sl[(sl.length-1)/2]:(sl[sl.length/2-1]+sl[sl.length/2])/2;refit=true;
  const lost=M.filter(o=>o.shown&&!Number.isFinite(o.e)).length;
  return 'Refitted on '+inc.length+' of '+B.length+' benchmarks in '+Math.round(performance.now()-t)+' ms, with Epoch’s model, penalty and 130/150 anchors'+(anc===WIN?'':' (slope pinned on '+B[anc].name+' instead of Winogrande)')+'. '+(lost?lost+' models since GPT-4 have no scores left and drop out. ':'')+'No intervals: those need Epoch’s bootstrap.';
@@ -269,10 +280,10 @@ function build(){
  const tr=[];
  B.forEach(d=>{
   const on=(!hl||hl===d.name)&&(!ha||ha===d.area), op=on?(d.on||hl===d.name?1:0.22):0.07, big=hl===d.name;
-  const ht='<b>%{customdata[0]}</b><br>'+esc(d.name)+(d.on?'':' (not in fit)')+'<br>%{customdata[1]}%{customdata[2]}'+(scale==='implied'?' \u2192 implies %{y:.1f}':'')+', %{x|%b %Y}<extra></extra>',ya=scale==='implied'?'y2':'y';
-  if(view==='all'&&d.all.length) tr.push({x:d.all.map(p=>p[0]),y:d.all.map(yv),yaxis:ya,customdata:d.all.map(p=>[p[3],(p[2]*100).toFixed(1)+'%',pin(p)?' (pinned at the curve\u2019s '+(pin(p)<0?'floor':'ceiling')+')':'']),
+  const ht='<b>%{customdata[0]}</b><br>'+esc(d.name)+(d.on?'':' (not in fit)')+'<br>%{customdata[1]}%{customdata[2]}'+(scale==='implied'?' \u2192 implies %{y:.1f}':'')+', %{x|%b %Y}%{customdata[3]}<extra></extra>',ya=scale==='implied'?'y2':'y';
+  if(view==='all'&&d.all.length) tr.push({x:d.all.map(p=>p[0]),y:d.all.map(yv),yaxis:ya,customdata:d.all.map(p=>[p[3],(p[2]*100).toFixed(1)+'%',pin(p)?' (pinned at the curve\u2019s '+(pin(p)<0?'floor':'ceiling')+')':'',p[7]]),
    type:'scatter',mode:'markers',name:d.name,showlegend:false,marker:{color:d.col,size:4,opacity:0.3*op},hovertemplate:ht});
-  if(d.fr.length) tr.push({x:d.fr.map(p=>p[0]),y:d.fr.map(yv),yaxis:ya,customdata:d.fr.map(p=>[p[3],(p[2]*100).toFixed(1)+'%',pin(p)?' (pinned at the curve\u2019s '+(pin(p)<0?'floor':'ceiling')+')':'']),
+  if(d.fr.length) tr.push({x:d.fr.map(p=>p[0]),y:d.fr.map(yv),yaxis:ya,customdata:d.fr.map(p=>[p[3],(p[2]*100).toFixed(1)+'%',pin(p)?' (pinned at the curve\u2019s '+(pin(p)<0?'floor':'ceiling')+')':'',p[7]]),
    type:'scatter',mode:'lines+markers',name:d.name,showlegend:false,opacity:op,
    line:{color:d.col,width:big?3.2:d.on?1.9:1.4,dash:d.on?'solid':'dot'},marker:{color:d.col,size:big?7.5:5.5,symbol:d.fr.map(p=>pin(p)?'circle-open':'circle'),line:{color:d.fr.map(p=>pin(p)?d.col:css('--bg')),width:d.fr.map(p=>pin(p)?1.6:1)}},hovertemplate:ht});
  });

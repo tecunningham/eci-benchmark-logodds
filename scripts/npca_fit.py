@@ -25,8 +25,8 @@ from scipy.optimize import nnls
 
 ANCHOR_LOW, ANCHOR_HIGH = ("Claude 3.5 Sonnet", 130.0), ("GPT-5", 150.0)
 NKNOT = 28            # knots per monotone curve, spread over the range of the index across all models
-LAM_SMOOTH = 30.0     # penalty on changes in slope between neighbouring segments (chosen by 5-fold CV)
-LAM_SHRINK = 10.0     # penalty on departures from the benchmark's logistic curve (chosen by 5-fold CV)
+LAM_SMOOTH = 30.0     # penalty on changes in slope between segments; near the minimum of a flat 5-fold CV surface (npca_tune.py)
+LAM_SHRINK = 10.0     # pull towards the benchmark's logistic; CV is flat in it and blind to spacing, so this is a choice (npca_tune.py)
 PRIOR_SD = (25.0, 3.0)    # N(mean, sd^2) prior on each model coordinate (ECI points); axis-2 sd chosen by 5-fold CV
 NOISE_VAR = 0.006     # residual variance used to weigh that prior against squared error
 ALPHA_MAX = np.deg2rad(70)
