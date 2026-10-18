@@ -433,7 +433,7 @@ const fmtD=d=>new Date(d).toLocaleDateString('en-GB',{month:'short',year:'numeri
  const im=LV.implied.slice(0,10);
  $('#shtab').innerHTML='<h3>Free curve vs logistic, last year’s models</h3>'+t(['Benchmark','Last-year scores','Their mean score','Shift'],
   im.map(x=>'<tr><td>'+short(x.name)+'</td><td>'+x.n_last+'</td><td>'+Math.round(100*x.score_last)+'%</td><td>'+sg(x.shift)+'</td></tr>'))+
-  '<p class="sub" style="margin:6px 4px">Heavily scored, near-saturated benchmarks (GPQA diamond, OTIS Mock AIME, ARC-AGI) are where the logistic’s fast saturation bites: the last points towards 100% imply more capability on their own curves. GPQA diamond is the one benchmark that pushes towards more acceleration on both views.</p>';
+  '<p class="sub" style="margin:6px 4px">Heavily scored, near-saturated benchmarks (GPQA diamond, OTIS Mock AIME, ARC-AGI) are where the logistic’s fast saturation bites: the last points towards 100% imply more capability on their own curves. GPQA diamond is the only benchmark with a sizeable push towards more acceleration on both views.</p>';
 })();
 function drawAccel(){
  const ink=css('--ink'),mut=css('--muted'),band=css('--band'),[w0,w1,w2]=AC.windows;

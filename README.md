@@ -10,7 +10,7 @@ so on a log-odds scale every benchmark should rise linearly with ECI. These char
 
 - **Interactive version:** https://tecunningham.github.io/eci-benchmark-logodds/ (source [`index.html`](index.html)). Choose a lab to see that lab's own frontier (running best ECI among its models), with the overall frontier dashed for comparison. Untick benchmarks to **refit ECI** on the rest (see below). The chart runs full width, and the page has three more controls:
   - **Curve:** shows the frontier under any benchmark curve whose joint fit settles: Epoch's logistic, logistic plus floor and ceiling, complementary log-log, a shared free shape, or the piecewise-linear curve. The method is in the nonparametric section below.
-  - **Scale:** *Scores in log-odds* is the original view. *Capability each score implies* maps every score back through its benchmark's own fitted curve onto the frontier's axis. For the logistic, that is each benchmark's log-odds rescaled by its own slope and difficulty.
+  - **Scale:** *Scores in log-odds* is the original view. *Capability each score implies* maps every score back through its benchmark's own fitted curve onto the frontier's axis. For the logistic, that is each benchmark's log-odds rescaled by its own slope and difficulty. Before mapping, each score is pinned to 1%–99% of the way from its curve's floor to its ceiling, as the log-odds view pins scores to 1%–99%. Pinned scores are drawn hollow. Without the pin, a score at or past a fitted floor or ceiling, which the curve can't invert, would land at the end of the range; this mattered most for logistic + floor + ceiling.
   - **From:** zooms in by moving the earliest date shown.
 
   The two fixed points of the scale, Claude 3.5 Sonnet ≡ 130 and GPT-5 ≡ 150, are marked under every curve. The link records every setting, e.g. `#lab=OpenAI&curve=monotone&scale=implied&from=2025-01-01`.
@@ -56,7 +56,7 @@ Intervals come from 100 refits on benchmarks resampled with replacement. They're
 **Which benchmarks drive it?** [`scripts/curve_fits.py`](scripts/curve_fits.py) refits both curves with each benchmark left out in turn. The extra last-year growth of the piecewise-linear curve over the logistic (4.0 points a year) survives every single drop (3.6–5.9), so no one benchmark carries it.
 - **Largest contributors:** HellaSwag (+0.45), ProofBench (+0.41), SimpleBench (+0.35), PIQA (+0.34), GPQA diamond (+0.31).
 - **Pulling the other way:** FrontierMath T1–3 v2 and OTIS Mock AIME.
-- **Where each benchmark's own free curve places last year's models highest relative to the logistic:** near-saturated benchmarks with many recent scores, chiefly GPQA diamond (+2.7 ECI points), OTIS Mock AIME (+2.6) and ARC-AGI (+1.5). GPQA diamond is the only benchmark pushing toward more acceleration on both measures.
+- **Where each benchmark's own free curve places last year's models highest relative to the logistic:** near-saturated benchmarks with many recent scores, chiefly OTIS Mock AIME (+2.2 ECI points), GPQA diamond (+2.0) and ARC-AGI (+1.3). GPQA diamond is the only benchmark with a sizeable push toward more acceleration on both measures.
 
 Rebuild (about 20 minutes on 8 cores; `curve_fits.py` another 6):
 

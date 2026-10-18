@@ -4,9 +4,11 @@ For every option whose joint fit settles (npca_accel.py), refit capability joint
 procedure, 80 rounds from published ECI) and store
   theta[m]        capability per model (ECI scale; Claude 3.5 Sonnet = 130, GPT-5 = 150)
   imp[b][i]       capability implied by the i-th score of benchmark b (same order as eci_data.json):
-                  the score, pinned to [1%, 99%] like the log-odds view, mapped back through that benchmark's
-                  own fitted curve. If the curve never reaches the score, the score is censored at the end of
-                  the curve's range (flagged in cen).
+                  the score mapped back through that benchmark's own fitted curve, after pinning it to 1%-99% of
+                  the way from the curve's floor to its ceiling. For curves running from 0 to 1 that is the
+                  log-odds view's 1%/99% pin; for curves with a fitted floor or ceiling it stops scores at or past
+                  them (which the curve cannot invert) from mapping to the ends of the range. Pinned scores are
+                  flagged in cen (-1 at the floor, +1 at the ceiling).
 Published ECI is included with Epoch's own difficulty and slope (edi_scores.csv): implied = edi + logit(y)/slope.
 
 Also leave-one-benchmark-out: for the logistic and piecewise-linear curves, refit without each benchmark and
@@ -40,19 +42,23 @@ SHOW = ["four_pl", "cloglog", "shared", "monotone"]   # options that settle, bes
 def implied(curve, ys, lo, hi):
     g = np.arange(lo, hi + 0.25, 0.25)
     v = np.maximum.accumulate(curve(g))
+    a, b = v[0] + EPS * (v[-1] - v[0]), v[-1] - EPS * (v[-1] - v[0])     # 1% / 99% of the curve's own range
     out, cen = [], []
-    for y in np.clip(ys, EPS, 1 - EPS):
+    for y0 in ys:
+        y = min(max(y0, a), b)
+        c = -1 if y0 < a else 1 if y0 > b else 0
         if y <= v[0]:
             out.append(g[0]); cen.append(-1)
         elif y >= v[-1]:
             out.append(g[np.argmax(v >= v[-1] - 1e-9)]); cen.append(1)
         else:
+            cen.append(c)
             k = np.searchsorted(v, y)            # v[k-1] < y <= v[k]
             j = k - 1
             while j > 0 and v[j - 1] == v[j]:    # start of a flat run: take the run's end
                 j -= 1
             t = (y - v[k - 1]) / max(v[k] - v[k - 1], 1e-12)
-            out.append(g[k - 1] + t * (g[k] - g[k - 1])); cen.append(0)
+            out.append(g[k - 1] + t * (g[k] - g[k - 1]))
     return out, cen
 
 
@@ -86,13 +92,15 @@ def main(leverage=True):
         fits = list(ex.map(fit_variant, SHOW))
         L = list(ex.map(loo, [(k, b) for k in ("logistic", "monotone") for b in range(NB.NB)])) if leverage else []
     E = pd.read_csv(ROOT / "data" / "epoch" / "edi_scores.csv").set_index("benchmark_name")
-    pub_imp = []
+    pub_imp, pub_cen = [], []
     for bd in RAW["b"]:
         e, s = E.loc[bd["name"], "edi"], E.loc[bd["name"], "estimated_slope_scaled"]
         y = np.clip([q[1] for q in bd["p"]], EPS, 1 - EPS)
         pub_imp.append([round(float(e + np.log(v / (1 - v)) / s), 2) for v in y])
+        y0 = np.array([q[1] for q in bd["p"]])
+        pub_cen.append([int(-1 if v < EPS else 1 if v > 1 - EPS else 0) for v in y0])
     out = dict(eps=EPS, variants=fits, published=dict(edi=[round(float(E.loc[b["name"], "edi"]), 3) for b in RAW["b"]],
-               slope=[round(float(E.loc[b["name"], "estimated_slope_scaled"]), 5) for b in RAW["b"]], imp=pub_imp))
+               slope=[round(float(E.loc[b["name"], "estimated_slope_scaled"]), 5) for b in RAW["b"]], imp=pub_imp, cen=pub_cen))
     json.dump(out, open(ROOT / "data" / "curve_fits.json", "w"), separators=(",", ":"))
     for f in fits:
         print(f"{f['label']:45s} rmse {f['rmse']:.4f}  prev {f['prev']:.1f}  last {f['last']:.1f}")
