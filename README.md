@@ -8,7 +8,12 @@ so on a log-odds scale every benchmark should rise linearly with ECI. These char
 
 ![Frontier ECI and benchmark scores, all labs](figures/eci_frontier_all.png)
 
-- **Interactive version:** https://tecunningham.github.io/eci-benchmark-logodds/ (source [`index.html`](index.html)). Choose a lab to see that lab's own frontier (running best ECI among its models), with the overall frontier dashed for comparison. Untick benchmarks to **refit ECI** on the rest (see below). The link records the lab and any dropped benchmarks, e.g. `#lab=OpenAI`.
+- **Interactive version:** https://tecunningham.github.io/eci-benchmark-logodds/ (source [`index.html`](index.html)). Choose a lab to see that lab's own frontier (running best ECI among its models), with the overall frontier dashed for comparison. Untick benchmarks to **refit ECI** on the rest (see below). The chart runs full width, and the page has three more controls:
+  - **Curve:** shows the frontier under any benchmark curve whose joint fit settles: Epoch's logistic, logistic plus floor and ceiling, complementary log-log, a shared free shape, or the piecewise-linear curve. The method is in the nonparametric section below.
+  - **Scale:** *Scores in log-odds* is the original view. *Capability each score implies* maps every score back through its benchmark's own fitted curve onto the frontier's axis. For the logistic, that is each benchmark's log-odds rescaled by its own slope and difficulty.
+  - **From:** zooms in by moving the earliest date shown.
+
+  The two fixed points of the scale, Claude 3.5 Sonnet ≡ 130 and GPT-5 ≡ 150, are marked under every curve. The link records every setting, e.g. `#lab=OpenAI&curve=monotone&scale=implied&from=2025-01-01`.
 - **Right axis:** each benchmark's score for the models that set a new frontier ECI, as log-odds, labelled in percent. Colour is the benchmark's area.
 - **Left axis:** frontier ECI (running maximum by release date), drawn as straight lines between successive records, with its 90% interval. The axis is scaled so a benchmark with the median fitted slope (0.107 logits per ECI point) runs parallel to the ECI line.
 - **Top:** the 22 record-setting models from GPT-4 (Mar 2023) on, with their ECI.
@@ -48,13 +53,20 @@ Intervals come from 100 refits on benchmarks resampled with replacement. They're
 - **The direction is robust; the size isn't.** A curve that is free per benchmark doesn't pin down the spacing between models. With a weaker pull toward the logistic, quantile-placed knots, or an item mixture, the fit keeps stretching the top of the axis, and the last-year rate climbs to 22–37 points a year without settling (dashed lines in the figure). Only curves tied to a common shape give a number set by the data. Of those, the shared shape is the most flexible, and it gives 19.2.
 - **Mechanism.** Logistic curves fitted on older models rise too steeply. Later models score above the prediction where predicted scores are low, and below it near the top. In the 80–100% band, the error is -0.062 for the logistic and -0.038 for the piecewise-linear curve. So benchmarks saturate more slowly than the logistic assumes, and the last points toward 100% take more capability than ECI credits. The models that won those points, last year's frontier, therefore sit higher. The piecewise-linear curve corrects part of this, which is why it both predicts later models better and reads more acceleration.
 
-Rebuild (about 20 minutes on 8 cores):
+**Which benchmarks drive it?** [`scripts/curve_fits.py`](scripts/curve_fits.py) refits both curves with each benchmark left out in turn. The extra last-year growth of the piecewise-linear curve over the logistic (4.0 points a year) survives every single drop (3.6–5.9), so no one benchmark carries it.
+- **Largest contributors:** HellaSwag (+0.45), ProofBench (+0.41), SimpleBench (+0.35), PIQA (+0.34), GPQA diamond (+0.31).
+- **Pulling the other way:** FrontierMath T1–3 v2 and OTIS Mock AIME.
+- **Where each benchmark's own free curve places last year's models highest relative to the logistic:** near-saturated benchmarks with many recent scores, chiefly GPQA diamond (+2.7 ECI points), OTIS Mock AIME (+2.6) and ARC-AGI (+1.5). GPQA diamond is the only benchmark pushing toward more acceleration on both measures.
+
+Rebuild (about 20 minutes on 8 cores; `curve_fits.py` another 6):
 
 ```bash
 cd scripts
 python npca_accel.py          # joint fits, iteration paths, bootstrap -> data/npca_accel.json
 python npca_accel_figure.py   # -> figures/npca_accel.png
+python curve_fits.py          # dashboard curves + leave-one-out -> data/curve_fits.json, data/curve_leverage.json
 python npca_build_page.py     # -> ../npca.html
+python build_page.py          # -> ../index.html
 ```
 
 ### Eight ways to fit a benchmark's curve
@@ -187,7 +199,7 @@ pip install pandas numpy matplotlib
 cd scripts
 python build_data.py     # data/epoch/*.csv -> data/frontier_all.json, data/eci_data.json
 python make_figure.py    # -> figures/eci_frontier_all.png
-python build_page.py     # page_template.html + eci_data.json + eci_fit.js -> ../index.html
+python build_page.py     # page_template.html + eci_data.json + curve_fits.json + eci_fit.js -> ../index.html (run curve_fits.py first)
 ```
 
 The interactive page embeds `eci_data.json` and the solver. That data holds every model and score in Epoch's fit, tagged by lab, plus the raw parameters of our full fit, which each refit starts from. The page computes each lab's frontier in the browser. It uses Plotly from jsDelivr and falls back to the static PNG if that fails to load.

@@ -5,7 +5,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 page = (ROOT / "scripts" / "npca_page_template.html").read_text()
-for key, name in [("/*DATA*/", "npca.json"), ("/*LINKS*/", "npca_links.json"), ("/*ACCEL*/", "npca_accel.json")]:
+for key, name in [("/*DATA*/", "npca.json"), ("/*LINKS*/", "npca_links.json"), ("/*ACCEL*/", "npca_accel.json"),
+                  ("/*LEV*/", "curve_leverage.json")]:
     assert page.count(key) == 1, key
     page = page.replace(key, (ROOT / "data" / name).read_text())
 (ROOT / "npca.html").write_text(page)

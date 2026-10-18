@@ -63,8 +63,20 @@ table.cv td:first-child,table.cv th:first-child{text-align:left}
 <body><main>
 <h1>Is AI progress accelerating? It depends on the shape of each benchmark’s curve</h1>
 <p class="lede">Epoch's Capabilities Index assumes every benchmark score follows one S-shaped curve of capability: <i>sigmoid(slope × (capability − difficulty))</i>. That is a choice. Below, eight different curves are fitted to each benchmark, from ECI's logistic to curves of any monotone shape, and compared on scores they never saw. Then each is fitted jointly with capability, to see how it changes the measured <b>speed and acceleration</b> of frontier progress. The curves roughly agree on the rate up to a year ago (12–15 ECI points a year). The curves that predict newer models best measure faster recent growth than ECI, but how much faster is not pinned down by the data.</p>
-<nav class="toc"><a href="#links">Curve options compared</a><a href="#accel">Is progress accelerating?</a><a href="#curves">Benchmark curves</a><a href="#bend">All curves vs the sigmoid</a><a href="#cv">Held-out error</a><a href="#map">Two-dimensional map</a><a href="#rank">Ranks</a><a href="#resid">Residuals</a><a href="#frontier">Frontier by benchmark</a><a href="#method">Method</a><a href="index.html">← log-odds page</a></nav>
-<h2 id="links" style="border-top:0;margin-top:14px">Curve options compared</h2>
+<nav class="toc"><a href="#accel">Is progress accelerating?</a><a href="#links">Curve options compared</a><a href="#curves">Benchmark curves</a><a href="#bend">All curves vs the sigmoid</a><a href="#cv">Held-out error</a><a href="#map">Two-dimensional map</a><a href="#rank">Ranks</a><a href="#resid">Residuals</a><a href="#frontier">Frontier by benchmark</a><a href="#method">Method</a><a href="index.html">← log-odds page</a></nav>
+<h2 id="accel" style="border-top:0;margin-top:14px">Is progress accelerating? It depends on the curve</h2>
+<p class="sub">Here each curve is fitted <i>jointly</i> with capability: curves and model positions alternate until they settle, with Claude 3.5 Sonnet = 130 and GPT-5 = 150 fixing the scale. Every option gives its own frontier (best capability to date, from GPT-4 on). The question is how fast it rose in the last 12 months (<span class="aw1"></span>) versus the 12 months before (<span class="aw0"></span>).</p>
+<div class="tiles" id="actiles"></div>
+<div class="card" style="margin-bottom:12px"><h3>Frontier capability under each curve</h3><p class="sub">Best capability to date, straight lines between record-setting models; shaded: the two 12-month windows; dashed grey: Epoch's published ECI. The scale is fixed at two points, marked ◆: <b>Claude 3.5 Sonnet ≡ 130</b> and <b>GPT-5 ≡ 150</b> under every curve, so the curves can only differ in how they space models around and beyond those two.</p><div id="acfront" class="plot" style="height:520px"></div></div>
+<div class="two"><div class="card"><h3>Growth, previous vs last 12 months</h3><p class="sub">ECI points per year. Hollow: previous 12 months; filled: last 12 months, with 90% interval from refits on resampled benchmarks. Right: share of resamples where growth sped up.</p><div id="acdumb" class="plot" style="height:400px"></div></div>
+<div class="card"><h3>Which answers settle?</h3><p class="sub">Last-12-month growth after each round of fitting. Solid lines settle. Dashed lines are curves free per benchmark: they keep stretching the top of the axis, so their number reflects the penalty and iteration count, not the data.</p><div id="acdrift" class="plot" style="height:380px"></div></div></div>
+<div style="margin-top:12px"><div class="card"><h3>Why: the logistic saturates too fast</h3><p class="sub">Later models' actual minus predicted score, on curves fitted to models released before <span class="acut"></span>, grouped by predicted score. Later models do better than predicted where scores are low and worse near the top.</p><div id="acbias" class="plot" style="height:380px"></div></div></div>
+<div class="notes" id="acnotes"></div>
+<h3 style="margin:18px 0 4px;font-size:15px">Which benchmarks drive it?</h3>
+<p class="sub">Two views of where the logistic understates recent progress. <b>Left:</b> refit both curves without each benchmark in turn; <i>leverage</i> is how much the piecewise-linear curve's extra last-year growth over the logistic (<span id="lv_gap"></span> points a year with all benchmarks) shrinks when that benchmark is dropped. <b>Right:</b> on each benchmark, how much higher its own free curve places last year's models than the logistic does, relative to the year before (ECI points). Look at them on the <a href="index.html#curve=monotone&scale=implied&from=2025-01-01">main chart, piecewise-linear curve, implied-capability view</a>.</p>
+<div class="two"><div class="card" id="lvtab"></div><div class="card" id="shtab"></div></div>
+
+<h2 id="links">Curve options compared</h2>
 <p class="sub">Change in held-out error (RMSE in score units) relative to ECI's logistic; lower is better. Bars are 90% intervals from resampling models. <b>Random</b>: 5-fold over all <span id="lk_nr"></span> scores. <b>Later models</b>: curves fitted only on models released before <span id="lk_cut"></span>, then used to predict half of each later model's scores (<span id="lk_nf"></span> scores), which tests extrapolation.</p>
 <div class="two"><div class="card"><h3>Random held-out scores</h3><div id="lkr" class="plot" style="height:330px"></div></div><div class="card"><h3>Later models</h3><div id="lkf" class="plot" style="height:330px"></div></div></div>
 <div id="lktable" style="overflow-x:auto"></div>
@@ -72,15 +84,6 @@ table.cv td:first-child,table.cv th:first-child{text-align:left}
 <h3 style="margin:18px 0 4px;font-size:15px">Every option on one benchmark</h3>
 <div class="controls"><label class="ctl-label">Benchmark <select id="lksel"></select></label></div>
 <div class="card"><div id="lkplot" class="plot" style="height:430px"></div></div>
-
-<h2 id="accel">Is progress accelerating? It depends on the curve</h2>
-<p class="sub">Here each curve is fitted <i>jointly</i> with capability: curves and model positions alternate until they settle, with Claude 3.5 Sonnet = 130 and GPT-5 = 150 fixing the scale. Every option gives its own frontier (best capability to date, from GPT-4 on). The question is how fast it rose in the last 12 months (<span class="aw1"></span>) versus the 12 months before (<span class="aw0"></span>).</p>
-<div class="tiles" id="actiles"></div>
-<div class="two"><div class="card"><h3>Frontier capability under each curve</h3><p class="sub">Straight lines between record-setting models; shaded: the two 12-month windows. Dashed: Epoch's published ECI.</p><div id="acfront" class="plot" style="height:400px"></div></div>
-<div class="card"><h3>Growth, previous vs last 12 months</h3><p class="sub">ECI points per year. Hollow: previous 12 months; filled: last 12 months, with 90% interval from refits on resampled benchmarks. Right: share of resamples where growth sped up.</p><div id="acdumb" class="plot" style="height:400px"></div></div></div>
-<div class="two" style="margin-top:12px"><div class="card"><h3>Which answers settle?</h3><p class="sub">Last-12-month growth after each round of fitting. Solid lines settle. Dashed lines are curves free per benchmark: they keep stretching the top of the axis, so their number reflects the penalty and iteration count, not the data.</p><div id="acdrift" class="plot" style="height:380px"></div></div>
-<div class="card"><h3>Why: the logistic saturates too fast</h3><p class="sub">Later models' actual minus predicted score, on curves fitted to models released before <span class="acut"></span>, grouped by predicted score. Later models do better than predicted where scores are low and worse near the top.</p><div id="acbias" class="plot" style="height:380px"></div></div></div>
-<div class="notes" id="acnotes"></div>
 
 <h2 id="joint">Joint fits: free curves and a second factor</h2>
 <p class="sub">Here capability is re-estimated together with the curves, comparing ECI's logistic with the piecewise-linear monotone curve, with one or two factors per model.</p>
@@ -138,7 +141,7 @@ table.cv td:first-child,table.cv th:first-child{text-align:left}
 </div>
 </main>
 <script>
-const R=/*DATA*/,LK=/*LINKS*/,AC=/*ACCEL*/;
+const R=/*DATA*/,LK=/*LINKS*/,AC=/*ACCEL*/,LV=/*LEV*/;
 const $=s=>document.querySelector(s),EPS=0.01,lg=p=>{p=Math.min(Math.max(p,EPS),1-EPS);return Math.log(p/(1-p))},sig=z=>1/(1+Math.exp(-z));
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const M=R.models,B=R.b,[G0,G1]=R.grid,GRID=Array.from({length:Math.round(G1-G0)+1},(_,i)=>G0+i);
@@ -418,13 +421,31 @@ const fmtD=d=>new Date(d).toLocaleDateString('en-GB',{month:'short',year:'numeri
   '<p><b>Mechanism.</b> Fitted to older models, logistic curves rise too steeply: later models score above prediction where predicted scores are low and below it near the top. A benchmark therefore saturates more slowly than the logistic assumes, so the last few points towards 100% take more capability than ECI credits, and the models that took them (the past year’s frontier) sit higher. The piecewise-linear curve corrects part of this, which is why it predicts later models better and why it reads more acceleration.</p>'+
   '<p><b>Setup.</b> '+AC.iters+' rounds of fitting from published ECI; bootstrap: '+AC.boot+' refits ('+AC.boot_iters+' rounds) on benchmarks resampled with replacement, for the curves that settle. The 12-month windows end at the data snapshot; the frontier is flat after its last record. Isotonic curves are left out: step functions give a model no direction to move in. Code: <code>scripts/npca_accel.py</code>.</p>';
 })();
+(function(){
+ $('#lv_gap').textContent=LV.full_gap.toFixed(1);
+ const t=(head,rows)=>'<table class="cv" style="width:100%"><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr>'+rows.join('')+'</table>';
+ const sg=v=>(v>0?'+':v<0?'\u2212':'')+Math.abs(v).toFixed(2);
+ const r=LV.rows,top=r.slice(0,8),bot=r.slice(-4);
+ $('#lvtab').innerHTML='<h3>Leave one benchmark out</h3>'+t(['Benchmark dropped','Models','Gap without it','Leverage'],
+  top.map(x=>'<tr><td>'+short(x.name)+'</td><td>'+x.n+'</td><td>'+x.gap.toFixed(1)+'</td><td>'+sg(x.leverage)+'</td></tr>')
+  .concat(['<tr><td colspan="4" style="color:var(--muted);text-align:left">… pulling the other way:</td></tr>'],bot.map(x=>'<tr><td>'+short(x.name)+'</td><td>'+x.n+'</td><td>'+x.gap.toFixed(1)+'</td><td>'+sg(x.leverage)+'</td></tr>')))+
+  '<p class="sub" style="margin:6px 4px">The gap survives every single drop ('+Math.min(...r.map(x=>x.gap)).toFixed(1)+'–'+Math.max(...r.map(x=>x.gap)).toFixed(1)+'), so no one benchmark carries it.</p>';
+ const im=LV.implied.slice(0,10);
+ $('#shtab').innerHTML='<h3>Free curve vs logistic, last year’s models</h3>'+t(['Benchmark','Last-year scores','Their mean score','Shift'],
+  im.map(x=>'<tr><td>'+short(x.name)+'</td><td>'+x.n_last+'</td><td>'+Math.round(100*x.score_last)+'%</td><td>'+sg(x.shift)+'</td></tr>'))+
+  '<p class="sub" style="margin:6px 4px">Heavily scored, near-saturated benchmarks (GPQA diamond, OTIS Mock AIME, ARC-AGI) are where the logistic’s fast saturation bites: the last points towards 100% imply more capability on their own curves. GPQA diamond is the one benchmark that pushes towards more acceleration on both views.</p>';
+})();
 function drawAccel(){
  const ink=css('--ink'),mut=css('--muted'),band=css('--band'),[w0,w1,w2]=AC.windows;
  const shapes=[[w0,w1],[w1,w2]].map(([a,b],k)=>({type:'rect',xref:'x',yref:'paper',x0:a,x1:b,y0:0,y1:1,fillcolor:band,opacity:k?1:.5,line:{width:0},layer:'below'}));
  const S=AC.variants.filter(v=>v.settles);
  const fr=[{x:AC.published.frontier.map(f=>f[0]),y:AC.published.frontier.map(f=>f[2]),text:AC.published.frontier.map(f=>f[1]),mode:'lines',name:'Published ECI',line:{color:mut,width:2,dash:'dash'},hovertemplate:'Published ECI<br><b>%{text}</b> %{y:.1f}<extra></extra>'}]
   .concat(S.map(v=>({x:v.frontier.map(f=>f[0]),y:v.frontier.map(f=>f[2]),text:v.frontier.map(f=>f[1]),mode:'lines+markers',name:v.label,line:{color:acc(v.key),width:v.key==='logistic'?3:2},marker:{size:5},hovertemplate:v.label+'<br><b>%{text}</b> %{y:.1f}<extra></extra>'})));
- Plotly.react('acfront',fr,L({showlegend:true,legend:{orientation:'h',y:-0.15,x:0,font:{size:11}},margin:{b:90},shapes,xaxis:{type:'date',range:['2024-01-01',w2]},yaxis:{title:{text:'frontier capability (ECI scale)',font:{size:12}},range:[125,Math.max(...S.map(v=>v.frontier[v.frontier.length-1][2]))+3]}}),CFG);
+ const anc=[['Claude 3.5 Sonnet',130],['GPT-5',150]].map(([m,v])=>{const f=AC.published.frontier.find(x=>x[1]===m);return{m,v,d:f?f[0]:null}}).filter(a=>a.d);
+ fr.push({x:anc.map(a=>a.d),y:anc.map(a=>a.v),mode:'markers',name:'Fixed points (all curves)',marker:{symbol:'diamond',size:15,color:css('--bg'),line:{color:ink,width:2.5}},hovertemplate:'%{text}<extra></extra>',text:anc.map(a=>a.m+' ≡ '+a.v+' by definition, under every curve')});
+ shapes.push(...anc.map(a=>({type:'line',xref:'paper',x0:0,x1:1,y0:a.v,y1:a.v,line:{color:mut,width:1,dash:'dot'},layer:'below'})));
+ const ancAnn=anc.map(a=>({x:a.d,y:a.v,text:'<b>'+a.m+' ≡ '+a.v+'</b>',showarrow:true,arrowhead:0,ax:-10,ay:-38,font:{size:12,color:ink},bgcolor:css('--panel'),bordercolor:ink,borderwidth:1,borderpad:3}));
+ Plotly.react('acfront',fr,L({showlegend:true,legend:{orientation:'h',y:-0.12,x:0,font:{size:11}},margin:{b:90},shapes,annotations:ancAnn,xaxis:{type:'date',range:['2024-01-01',w2]},yaxis:{title:{text:'frontier capability (ECI scale)',font:{size:12}},range:[125,Math.max(...S.map(v=>v.frontier[v.frontier.length-1][2]))+3]}}),CFG);
  const O=AC.variants.slice().reverse(),lab=O.map(v=>v.label+(v.settles?'':' *'));
  const nar=innerWidth<640,wrap=t=>nar?t.replace(/(.{1,18})(\s|$)/g,'$1<br>').replace(/<br>$/,''):t;
  $('#acdumb').style.height=nar?'600px':'400px';

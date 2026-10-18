@@ -4,7 +4,7 @@
 //
 // input: {nm, rows:[[model, bench, score]...], benches:[included bench ids], anchor, anchorDisc,
 //         cap0[nm], dif0[], dis0[] (warm start, indexed by bench id), lowModel, highModel, low, high, reg, clip}
-// output: {eci[nm] (NaN for models with no scores left), slope{bench: logits per ECI point}, iters, cost}
+// output: {eci[nm] (NaN for models with no scores left), slope{bench: logits per ECI point}, edi{bench: difficulty, ECI scale}, iters, cost}
 function fitECI(I){
   const sig=z=>1/(1+Math.exp(-z));
   const used=new Map(),bpos=new Map();
@@ -62,8 +62,8 @@ function fitECI(I){
   if(!(ch-cl>1e-12))throw new Error('anchor models do not define a scale');
   const b=(I.high-I.low)/(ch-cl),a0=I.low-b*cl;
   const eci=new Array(I.nm).fill(NaN);used.forEach((j,m)=>eci[m]=a0+b*cap[j]);
-  const slope={};I.benches.forEach((bb,k)=>slope[bb]=dis[k]/b);
-  return {eci,slope,iters:it,cost:f};
+  const slope={},edi={};I.benches.forEach((bb,k)=>{slope[bb]=dis[k]/b;edi[bb]=a0+b*dif[k]});
+  return {eci,slope,edi,iters:it,cost:f};
 }
 // Cholesky solve of symmetric positive-definite A x = r (A is q x q, row-major); null if not PD
 function chol(A,r,q){
