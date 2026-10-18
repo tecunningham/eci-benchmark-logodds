@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nonparametric ECI</title>
+<title>Benchmark Curve Fits</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-strict-dist-min@2.35.2/plotly-strict.min.js"></script>
@@ -61,9 +61,20 @@ table.cv td,table.cv th{padding:3px 10px;border-bottom:1px solid var(--line);tex
 table.cv td:first-child,table.cv th:first-child{text-align:left}
 </style></head>
 <body><main>
-<h1>Nonparametric ECI: does the sigmoid hold, and is one number enough?</h1>
-<p class="lede">Epoch's Capabilities Index is a one-factor <b>logistic</b> PCA of the model × benchmark score matrix: every benchmark score is assumed to be <i>sigmoid(slope × (capability − difficulty))</i>. Here that assumption is relaxed in two directions. First, each benchmark gets its own <b>monotone curve</b> of capability, of any shape. Second, models get <b>two coordinates</b> instead of one, and each benchmark measures progress along its own direction. Both models are fit to the same scores and the same squared-error objective as ECI, and compared on held-out scores.</p>
-<nav class="toc"><a href="#curves">Benchmark curves</a><a href="#bend">All curves vs the sigmoid</a><a href="#cv">Held-out error</a><a href="#map">Two-dimensional map</a><a href="#rank">Ranks</a><a href="#resid">Residuals</a><a href="#frontier">Frontier by benchmark</a><a href="#method">Method</a><a href="index.html">← log-odds page</a></nav>
+<h1>Nonparametric ECI: eight ways to fit a benchmark’s curve</h1>
+<p class="lede">Epoch's Capabilities Index assumes every benchmark score follows one S-shaped curve of capability: <i>sigmoid(slope × (capability − difficulty))</i>. That is a choice. Below, eight different curves are fitted to each benchmark, from ECI's logistic to curves of any monotone shape, and compared on scores they never saw. Model capabilities are held fixed, so only the curve differs. Further down, the free curve is fitted jointly with capability, with one and two factors.</p>
+<nav class="toc"><a href="#links">Curve options compared</a><a href="#curves">Benchmark curves</a><a href="#bend">All curves vs the sigmoid</a><a href="#cv">Held-out error</a><a href="#map">Two-dimensional map</a><a href="#rank">Ranks</a><a href="#resid">Residuals</a><a href="#frontier">Frontier by benchmark</a><a href="#method">Method</a><a href="index.html">← log-odds page</a></nav>
+<h2 id="links" style="border-top:0;margin-top:14px">Curve options compared</h2>
+<p class="sub">Change in held-out error (RMSE in score units) relative to ECI's logistic; lower is better. Bars are 90% intervals from resampling models. <b>Random</b>: 5-fold over all <span id="lk_nr"></span> scores. <b>Later models</b>: curves fitted only on models released before <span id="lk_cut"></span>, then used to predict half of each later model's scores (<span id="lk_nf"></span> scores), which tests extrapolation.</p>
+<div class="two"><div class="card"><h3>Random held-out scores</h3><div id="lkr" class="plot" style="height:330px"></div></div><div class="card"><h3>Later models</h3><div id="lkf" class="plot" style="height:330px"></div></div></div>
+<div id="lktable" style="overflow-x:auto"></div>
+<div class="notes" id="lknotes"></div>
+<h3 style="margin:18px 0 4px;font-size:15px">Every option on one benchmark</h3>
+<div class="controls"><label class="ctl-label">Benchmark <select id="lksel"></select></label></div>
+<div class="card"><div id="lkplot" class="plot" style="height:430px"></div></div>
+
+<h2 id="joint">Joint fits: free curves and a second factor</h2>
+<p class="sub">Here capability is re-estimated together with the curves, comparing ECI's logistic with the piecewise-linear monotone curve, with one or two factors per model.</p>
 <div class="tiles" id="tiles"></div>
 
 <h2 id="curves">Each benchmark's curve, free shape vs sigmoid</h2>
@@ -118,13 +129,13 @@ table.cv td:first-child,table.cv th:first-child{text-align:left}
 </div>
 </main>
 <script>
-const R=/*DATA*/;
+const R=/*DATA*/,LK=/*LINKS*/;
 const $=s=>document.querySelector(s),EPS=0.01,lg=p=>{p=Math.min(Math.max(p,EPS),1-EPS);return Math.log(p/(1-p))},sig=z=>1/(1+Math.exp(-z));
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const M=R.models,B=R.b,[G0,G1]=R.grid,GRID=Array.from({length:Math.round(G1-G0)+1},(_,i)=>G0+i);
 const NAMEK={k1_logistic:'1 factor, sigmoid',k1_monotone:'1 factor, monotone',k2_logistic:'2 factors, sigmoid',k2_monotone:'2 factors, monotone',eci:'ECI (Epoch’s code)'};
 const short=n=>n.replace('FrontierMath-Tiers-1-3-v2-Private','FrontierMath T1–3 v2').replace('FrontierMath-Tier-4-v2-Private','FrontierMath T4 v2').replace('FrontierMath-2025-02-28-Private','FrontierMath T1–3 (v1)').replace('FrontierMath-Tier-4-2025-07-01-Private','FrontierMath T4 (v1)').replace('OTIS Mock AIME 2024-2025','OTIS Mock AIME');
-document.querySelectorAll('.cut').forEach(e=>e.textContent=new Date(R.cut).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}));
+document.querySelectorAll('.cut').forEach(e=>e.textContent=new Date(R.cut).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}));
 document.querySelectorAll('.nk').forEach(e=>e.textContent=R.params.nknot);document.querySelectorAll('.lsm').forEach(e=>e.textContent=R.params.smooth);document.querySelectorAll('.lsh').forEach(e=>e.textContent=R.params.shrink);document.querySelectorAll('.nb').forEach(e=>e.textContent=R.params.boot);
 // cell layout: [model, score, fit k1l,k1m,k2l,k2m, oof k1l,k1m,k2l,k2m,eci, fwd k1l,k1m]
 const rmse=a=>{a=a.filter(Number.isFinite);return Math.sqrt(a.reduce((s,v)=>s+v*v,0)/a.length)};
@@ -342,7 +353,44 @@ function drawFrontier(){
  Plotly.react('frplot',tr,L({xaxis:{type:'date'},yaxis:{title:{text:'capability (θ / benchmark-implied)',font:{size:12}}}}),CFG);
 }
 
-function drawAll(){drawGrid();drawDetail();drawBend();drawCV();drawMap();drawRank();drawHeat();drawFrontier()}
+// ---------- curve options compared ----------
+const LKCOL={logistic:'var(--ref)',four_pl:'#8b3dff',cloglog:'#e8177d',shared:'#00a86b',logit_spline:'#00b4d8',item_mixture:'#ff7a00',monotone:'#1d64f2',isotonic:'#9aa1af'};
+const lkc=k=>{const v=LKCOL[k];return v.startsWith('var')?css(v.slice(4,-1)):v};
+const sg=v=>(v>0?'+':v<0?'\u2212':'')+Math.abs(v).toFixed(1);
+(function(){
+ $('#lk_nr').textContent=LK.n_random.toLocaleString();$('#lk_nf').textContent=LK.n_forward.toLocaleString();
+ $('#lk_cut').textContent=new Date(LK.cut).toLocaleDateString('en-GB',{month:'short',year:'numeric',timeZone:'UTC'});
+ const f=v=>'<span style="white-space:nowrap">'+sg(v[0])+'% <small style="color:var(--muted)">['+v[1].toFixed(1)+', '+v[2].toFixed(1)+']</small></span>';
+ $('#lktable').innerHTML='<table class="cv"><tr><th>Curve</th><th>Parameters per benchmark</th><th>Keeps spacing between models?</th><th>Random RMSE</th><th>vs logistic</th><th>Later-models RMSE</th><th>vs logistic</th></tr>'+
+  LK.options.map(o=>'<tr><td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:'+LKCOL[o.key]+'"></span>'+o.label+'</td><td>'+o.npar+'</td><td>'+o.spacing+'</td><td>'+o.random.toFixed(4)+'</td><td>'+f(o.drandom)+'</td><td>'+o.forward.toFixed(4)+'</td><td>'+f(o.dforward)+'</td></tr>').join('')+
+  '<tr><td style="color:var(--muted)">ECI as Epoch fits it (capability and curves jointly)</td><td>2</td><td>yes</td><td>'+LK.eci_joint.random.toFixed(4)+'</td><td>'+f(LK.eci_joint.drandom)+'</td><td></td><td></td></tr></table>';
+ const by=Object.fromEntries(LK.options.map(o=>[o.key,o]));
+ const top=LK.per_b.slice().sort((a,b)=>a.monotone-b.monotone).slice(0,5).map(b=>short(b.name)+' ('+b.n+')').join(', ');
+ $('#lknotes').innerHTML='<p><b>What this shows.</b> No curve shape beats the logistic by much: on random held-out scores the best (the item-difficulty mixture, '+sg(by.item_mixture.drandom[0])+'%, and the piecewise-linear monotone curve, '+sg(by.monotone.drandom[0])+'%) remove under 2% of the error. The gains come from heavily-scored benchmarks: '+top+'. The shapes split clearly on <i>later models</i>, where a curve must extrapolate. The piecewise-linear curve, which falls back to the logistic beyond its data, does best ('+sg(by.monotone.dforward[0])+'%). The item mixture has no item difficulties beyond its training range and is erratic. Floors and ceilings, the asymmetric complementary log-log and unsmoothed isotonic curves all extrapolate badly ('+sg(by.four_pl.dforward[0])+'%, '+sg(by.cloglog.dforward[0])+'%, '+sg(by.isotonic.dforward[0])+'%).</p>'+
+  '<p><b>Is the S-shape itself right?</b> The <i>shared</i> option learns one free shape for all 60 benchmarks, each keeping its own slope and difficulty. It ends up within '+LK.shared.maxdev.toFixed(3)+' of the logistic everywhere and predicts as well, so the logistic is the right common shape. Departures are benchmark-specific.</p>'+
+  '<p><b>Spacing.</b> A curve free per benchmark (spline, piecewise linear, isotonic) can absorb any stretching of the capability axis, so with it only the <i>order</i> of models is identified, and the distances, hence the speed of progress, come from the pull towards the logistic. A shared shape keeps distances identified; a mixture with one item slope for every benchmark partly does. Given how small the accuracy differences are, that is the main ground for choosing.</p>'+
+  '<p><b>Setup.</b> Capability per model is ECI refit on the training scores only, so nothing leaks from test scores. The spline penalty (λ = '+by.logit_spline.par.lam+') and the mixture item slope and penalty (s = '+by.item_mixture.par.s+', λ = '+by.item_mixture.par.lam+') were chosen on the random folds, which flatters their random numbers slightly; the later-models test was not used for tuning. Code: <code>scripts/npca_links.py</code>.</p>';
+ const ls=$('#lksel');LK.curves.map((c,i)=>[c,i]).sort((a,b)=>a[0].name.localeCompare(b[0].name)).forEach(([c,i])=>{const o=document.createElement('option');o.value=i;o.textContent=short(c.name)+' ('+c.n+' models)';ls.appendChild(o)});
+ ls.value=LK.curves.findIndex(c=>c.name===LK.per_b.slice().sort((a,b)=>a.monotone-b.monotone)[0].name);
+ ls.onchange=drawLinkCurve;
+})();
+function drawLinks(){
+ const O=LK.options.slice().reverse(),pos=css('--pos'),neg=css('--neg'),mut=css('--muted');
+ const nar=innerWidth<640,wrap=t=>nar?t.replace(/(.{1,16})(\s|$)/g,'$1<br>').replace(/<br>$/,''):t;
+ [['lkr','drandom'],['lkf','dforward']].forEach(([id,k])=>{
+  const col=o=>o[k][2]<0?neg:o[k][1]>0?pos:mut;
+  Plotly.react(id,[{x:O.flatMap(o=>[o[k][1],o[k][2],null]),y:O.flatMap(o=>[wrap(o.label),wrap(o.label),null]),mode:'lines',line:{color:mut,width:2},hoverinfo:'skip'},
+   {x:O.map(o=>o[k][0]),y:O.map(o=>wrap(o.label)),mode:'markers',marker:{size:10,color:O.map(col),line:{color:css('--bg'),width:1}},
+    text:O.map(o=>o[k][0].toFixed(1)+'% (90%: '+o[k][1].toFixed(1)+' to '+o[k][2].toFixed(1)+')'),hovertemplate:'<b>%{y}</b><br>%{text}<extra></extra>'}],
+   L({margin:{l:nar?120:250,r:14,t:6,b:40},xaxis:{title:{text:'change in RMSE vs logistic (%)',font:{size:12}},zeroline:true,zerolinecolor:css('--ink'),zerolinewidth:1.5},yaxis:{automargin:true,tickfont:{color:css('--ink'),size:nar?10:12}}}),CFG)});
+}
+function drawLinkCurve(){
+ const c=LK.curves[+$('#lksel').value],g=c.f.logistic.map((_,j)=>c.g0+j);
+ const tr=[{x:c.pts.map(p=>p[0]),y:c.pts.map(p=>p[1]),text:c.pts.map(p=>p[2]),mode:'markers',marker:{size:6,color:areaCol(c.area),opacity:.75},name:'scores',hovertemplate:'<b>%{text}</b><br>ECI %{x:.1f}, score %{y:.1%}<extra></extra>'}]
+  .concat(LK.options.map(o=>({x:g,y:c.f[o.key],mode:'lines',name:o.label,line:{color:lkc(o.key),width:o.key==='logistic'?2.5:1.8,dash:o.key==='logistic'?'dash':'solid',shape:o.key==='isotonic'?'hv':'linear'},hovertemplate:o.label+': %{y:.1%}<extra></extra>'})));
+ Plotly.react('lkplot',tr,L({showlegend:true,legend:{orientation:'h',y:-0.18,x:0,font:{size:11}},margin:{b:110},xaxis:{title:{text:'ECI (fit on all scores)',font:{size:12}}},yaxis:{title:{text:'score',font:{size:12}},tickformat:'.0%',range:[-0.03,1.03]}}),CFG);
+}
+function drawAll(){drawLinks();drawLinkCurve();drawGrid();drawDetail();drawBend();drawCV();drawMap();drawRank();drawHeat();drawFrontier()}
 sel=B.reduce((a,b)=>b.gain>a.gain?b:a,B[0]).i;
 if(typeof Plotly==='undefined'){document.querySelectorAll('.plot').forEach(e=>e.textContent='Chart library failed to load.');drawGrid()}
 else{drawAll();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll)}

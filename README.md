@@ -14,11 +14,60 @@ so on a log-odds scale every benchmark should rise linearly with ECI. These char
 - **Top:** the 22 record-setting models from GPT-4 (Mar 2023) on, with their ECI.
 - **Under each year:** how many ECI points the frontier line rose between 1 January and 31 December. Starred years are only partly covered (from the first record, or up to the latest one) and are annualised.
 
-## Nonparametric version
+## Nonparametric version: other ways to fit a benchmark's curve
+
+**Interactive:** https://tecunningham.github.io/eci-benchmark-logodds/npca.html (source [`npca.html`](npca.html)).
+
+ECI assumes every benchmark's score follows a logistic curve of capability. [`scripts/npca_links.py`](scripts/npca_links.py) fits eight different curves to each benchmark and compares them on scores they never saw. Each model's capability is held fixed at ECI refit on the training scores only, so only the curve differs.
+
+![Held-out error of eight ways to fit a benchmark's curve, relative to the logistic](figures/npca_links.png)
+
+| Curve | Parameters per benchmark | Keeps spacing between models? | Random held-out RMSE (vs logistic) | Later-models RMSE (vs logistic) |
+|---|---|---|---|---|
+| Logistic (ECI's curve) | 2 | yes | 0.0947 (0.0%) | 0.1656 (0.0%) |
+| Logistic + floor + ceiling | 4 | yes | 0.0946 (−0.0%) | 0.1728 (+4.3%) |
+| Complementary log-log | 2 | yes | 0.0963 (+1.7%) | 0.1938 (+17.0%) |
+| One free shape shared by all benchmarks | 2 (+ 1 shared curve) | yes | 0.0947 (+0.0%) | 0.1624 (−1.9%) |
+| Monotone spline in logit space | 8, penalised | only through the penalty | 0.0936 (−1.2%) | 0.1663 (+0.4%) |
+| Mixture of item difficulties | 30 weights, penalised | partly (shared item slope) | 0.0930 (−1.8%) | 0.1731 (+4.5%) |
+| Piecewise-linear monotone (npca) | 28, penalised | only through the pull to the logistic | 0.0931 (−1.7%) | 0.1577 (−4.8%) |
+| Isotonic (any step function) | up to n | no | 0.0975 (+3.0%) | 0.2016 (+21.8%) |
+
+How each curve works:
+- **Floor and ceiling** let a benchmark start above 0% or top out below 100%.
+- **Complementary log-log** is an asymmetric S: a slow start, then fast saturation.
+- **Shared shape** learns one free S-shape for all benchmarks; each benchmark keeps its own slope and difficulty.
+- **Monotone spline in logit space** fits a monotone spline to the log-odds of the score, penalised for bending. A very large penalty gives back the logistic exactly.
+- **Item-difficulty mixture** treats a benchmark as many questions of different difficulty, each answered on a logistic with one slope shared by all benchmarks. The curve is a non-negative weighted average of those logistics.
+- **Piecewise-linear monotone** is the curve in `npca_fit.py`, pulled toward the logistic.
+- **Isotonic** is any rising step function, with no smoothing.
+
+The two held-out tests:
+- **Random:** 5-fold over all 2,844 scores.
+- **Later models:** curves are fit on models released before 2025-09, then used to predict half of each later model's scores (473 scores).
+
+The spline's penalty and the mixture's settings were tuned on the random folds, so their random numbers are slightly flattering. The later-models test wasn't used for tuning.
+
+What the comparison shows:
+- **No shape beats the logistic by much.** On random held-out scores, the best curves (the item mixture and the piecewise-linear curve) cut error by under 2%. The gains come from heavily scored benchmarks such as OTIS Mock AIME, WeirdML, GSM8K, DTBench and MMLU.
+- **Extrapolation separates them.** On later models, the piecewise-linear curve does best (−4.8%), because it falls back to the logistic beyond its data. The item mixture is erratic there, since it has no item difficulties beyond its training range. Floors and ceilings (+4.3%), complementary log-log (+17.0%) and isotonic (+21.8%) all extrapolate badly.
+- **The S-shape itself is right.** The shared shape ends up within 0.034 of the logistic everywhere. Departures from the logistic are specific to individual benchmarks, not a general problem with the shape.
+- **The real trade-off is spacing.** A curve that is free for each benchmark can absorb any stretch of the capability axis. Only the *order* of models is then identified, and the speed of progress comes from the pull toward the logistic. A shared shape keeps the spacing identified, and a mixture with one item slope partly does. Since accuracy differs so little, that is the main reason to pick one over another.
+
+Rebuild this comparison (about 20 seconds; needs `scipy` and `scikit-learn`):
+
+```bash
+cd scripts
+python npca_links.py          # -> data/npca_links.json
+python npca_links_figure.py   # -> figures/npca_links.png
+python npca_build_page.py     # -> ../npca.html
+```
+
+### Joint fits: free curves and a second factor
 
 ![Each benchmark's free monotone curve vs the best sigmoid](figures/npca_curves.png)
 
-**Interactive:** https://tecunningham.github.io/eci-benchmark-logodds/npca.html (source [`npca.html`](npca.html)).
+Here capability is re-estimated together with the curves. In the later-models test, later models are placed using only these frozen curves rather than a joint ECI refit, so these errors are higher than in the table above and can't be compared with it directly.
 
 ECI is a rank-1 logistic PCA of the model × benchmark matrix. [`scripts/npca_fit.py`](scripts/npca_fit.py) relaxes it in two ways:
 
@@ -45,7 +94,7 @@ Results (RMSE in score units):
 - **A second factor cuts in-sample error a lot, but not held-out error.** With a median of 9 scores per model, the data don't support a second dimension.
 - **Only the ordering of models is identified.** With a free monotone curve, the spacing between models (and so the *speed* of progress) comes from the sigmoid assumption. The page's last chart shows how much the measured frontier would change if each benchmark's own curve set the scale.
 
-Rebuild (about 15 minutes on 4 cores; also needs `scipy`):
+Rebuild the joint fits (about 15 minutes on 4 cores; also needs `scipy`):
 
 ```bash
 cd scripts
