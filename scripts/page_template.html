@@ -43,6 +43,13 @@ details.fit summary b{font-weight:600}
 .fitgrid input{accent-color:var(--accent)}
 #fitmsg{font-size:13px;color:var(--muted);margin:6px 0 2px}
 #fitmsg.err{color:#c0392b}
+nav.tabs{display:flex;gap:0;margin:2px 0 14px;border-bottom:1px solid var(--line)}
+nav.tabs button{font:inherit;font-size:15px;padding:8px 14px;border:0;border-bottom:3px solid transparent;background:none;color:var(--muted);cursor:pointer;margin-bottom:-1px}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#rplot{width:100%;min-height:400px}
+.rkey{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted);margin:2px 0 4px}
+.rkey i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
 #plot{width:100%;height:min(86vh,900px);min-height:600px}
 .notes{color:var(--muted);font-size:13.5px;max-width:82ch;margin-top:10px}
 .notes p{margin:6px 0}
@@ -50,6 +57,11 @@ details.fit summary b{font-weight:600}
 <body><main>
 <h1 id="title">Frontier ECI and the benchmark scores behind it</h1>
 <p class="lede" id="lede"></p>
+<nav class="tabs" role="tablist" aria-label="View">
+ <button role="tab" data-tab="frontier" aria-selected="true">Frontier over time</button>
+ <button role="tab" data-tab="resid" aria-selected="false">Fit by benchmark (residuals)</button>
+</nav>
+<div id="ftab">
 <div class="controls">
  <label>Lab <select id="lab"><option value="">All labs</option></select></label>
  <div class="seg" role="group" aria-label="Which scores">
@@ -79,12 +91,40 @@ details.fit summary b{font-weight:600}
 <div class="legend" id="legend" role="group" aria-label="Benchmark area; choose one to isolate it"></div>
 <div id="plot"></div>
 <div id="fallback" hidden><p class="lede">The interactive chart could not load here, so this is the static version.</p><img alt="Frontier ECI and benchmark scores chart" style="max-width:100%;height:auto" src="figures/eci_frontier_all.png"></div>
+</div>
+<div id="rtab" hidden>
+<div class="controls">
+ <div class="seg" role="group" aria-label="What to plot">
+  <button data-rshow="scores" aria-pressed="true">Scores and fitted curve</button>
+  <button data-rshow="resid" aria-pressed="false">Residuals (score − fitted)</button>
+ </div>
+ <div class="seg" role="group" aria-label="Y-axis scale">
+  <button data-ry="logodds" aria-pressed="true">Log-odds y-axis</button>
+  <button data-ry="linear" aria-pressed="false">Linear y-axis</button>
+ </div>
+ <div class="seg" role="group" aria-label="X-axis range">
+  <button data-rx="own" aria-pressed="true">Each panel’s own ECI range</button>
+  <button data-rx="shared" aria-pressed="false">Shared ECI range</button>
+ </div>
+</div>
+<div class="controls">
+ <div class="seg" role="group" aria-label="Point colour">
+  <button data-rcol="date" aria-pressed="true">Colour by release date</button>
+  <button data-rcol="area" aria-pressed="false">Colour by area</button>
+ </div>
+ <label>Highlight lab <select id="rlab"><option value="">None</option></select></label>
+ <label>Order <select id="rsort"><option value="area">By area</option><option value="n">Most scores first</option><option value="rmse">Worst fit first (log-odds RMSE)</option><option value="curv">Most S-shaped misfit first</option></select></label>
+</div>
+<div class="rkey" id="rkey"></div>
+<div id="rplot"></div>
+<div class="notes" id="rnotes"></div>
+</div>
 <details class="fit" id="fitbox"><summary><b>Benchmarks in the ECI fit:</b> <span id="fitstat"></span></summary>
  <p id="fitmsg"></p>
  <div class="fitbar"><button type="button" data-fit="all">All (Epoch's published ECI)</button><button type="button" data-fit="since2023">Only benchmarks released since 2023</button><button type="button" data-fit="none">Clear</button></div>
  <div class="fitgrid" id="fitgrid"></div>
 </details>
-<div class="notes">
+<div class="notes" id="fnotes">
  <p>Data: Epoch AI's own ECI fit input (processed_data_for_eci.csv) and published ECI scores (eci_scores.csv) from benchmark_data.zip, snapshot of 1 Oct 2026, shown from GPT-4 (14 Mar 2023) onward. Each model's lab is the first organisation Epoch lists for it; labs with at least five models in the period can be chosen above. Every score is already floor- and ceiling-adjusted: (raw − random-guess baseline) ÷ (attainable ceiling − baseline), clipped to [0, 1], taking the best version within each model group. Frontier ECI is the running maximum by release date, over all labs or over the chosen lab's models; where several models share a date only the highest counts. <span id="count"></span> ECIs come from Epoch's joint fit over every lab's models (including the few pre-GPT-4 models not shown), so a lab's frontier is directly comparable with the overall one.</p><p>Areas follow the primary domain tag on Epoch's ECI page, grouped into seven: Math; Software engineering (includes Cybench); Agents &amp; computer use; Science; Reasoning &amp; games (conceptual reasoning plus games); Multimodal; Language &amp; knowledge (language understanding, world knowledge, long context, writing). Seven benchmarks have no tag there and were assigned by hand: METR Time Horizons, DeepResearch Bench (agents), LMCA (reasoning), Lech Mazur Writing (language), GeoBench (multimodal), and the two FrontierMath v1 sets (math).</p>
  <p>Solid vertical lines mark the start of each year; dotted lines mark the release of each frontier model. The frontier line joins successive records with straight lines, and the figure under each year is the rise along that line between 1 January and 31 December, in ECI points; a starred figure covers only part of the year (from the first record, or to the latest) and is annualised. The slope-matched ECI axis is scaled so a benchmark with the median fitted slope (<span id="slope"></span> logits per ECI point) runs parallel to the ECI line; steeper benchmarks climb faster than it.</p>
  <p>Refitting: untick benchmarks under “Benchmarks in the ECI fit” and ECI is re-estimated in your browser on the rest, using Epoch's model and objective (open-source <a href="https://github.com/epoch-research/eci-public">eci-public</a>): score = sigmoid(slope × (capability − difficulty)), least squares with the same L2 penalty, scaled so Claude 3.5 Sonnet = 130 and GPT-5 = 150. With all benchmarks ticked the chart shows Epoch's published numbers; this solver reproduces them to within 0.06 points. Refits have no intervals, since Epoch's come from 500 bootstrap refits. Unticked benchmarks stay on the chart as faded dotted lines, and Epoch's published frontier is drawn faded behind the refitted one. The link records the lab and any dropped benchmarks, so a refit can be shared. Scores of exactly 0 or 1 are pinned to 1% and 99%. Data CC BY 4.0, Epoch AI.</p>
@@ -106,6 +146,9 @@ let slope=RAW.slope,refit=false;
 // curve: which benchmark curve the capabilities come from ('eci' = Epoch's logistic: published, or refit on chosen benchmarks)
 // scale: benchmark lines in log-odds, or as the capability each score implies through its benchmark's fitted curve
 let curve='eci',scale='logodds',FROM=RAW.start,IMP=CF.published.imp,CEN=CF.published.cen,GD=null;
+// residual tab: Epoch's logistic (published, or the current refit). LC: each model's capability; LP: each benchmark's slope a and difficulty d
+let tab='frontier',LC=M.map(o=>o.pub),LP={a:CF.published.slope,d:CF.published.edi,refit:false};
+const pubLogistic=()=>{LC=M.map(o=>o.pub);LP={a:CF.published.slope,d:CF.published.edi,refit:false}};
 // weight of each score in its model's capability: the slope of its benchmark's curve at the model's capability.
 // Least squares places a model where its scores' misses balance; linearised, its capability is an average of the
 // capabilities its scores imply, each weighted by that slope squared. Share = slope^2 / sum over the model's scores in the fit.
@@ -179,10 +222,10 @@ D.areas.forEach(a=>{
 document.querySelectorAll('[data-fit]').forEach(b=>b.onclick=()=>{const m=b.dataset.fit;B.forEach(d=>d.on=m==='all'||(m==='since2023'&&(d.rel||'')>='2023'));changed()});
 const rows=[];B.forEach(d=>d.p.forEach(q=>rows.push([q[0],d.k,q[2]])));
 const LOW=M.findIndex(o=>o.m===FIT.low[0]),HIGH=M.findIndex(o=>o.m===FIT.high[0]),WIN=B.findIndex(d=>d.name===FIT.anchor);
-function setPublished(){M.forEach(o=>{o.e=o.pub;o.lo=o.plo;o.hi=o.phi});slope=RAW.slope;refit=false;IMP=CF.published.imp;CEN=CF.published.cen;
+function setPublished(){pubLogistic();M.forEach(o=>{o.e=o.pub;o.lo=o.plo;o.hi=o.phi});slope=RAW.slope;refit=false;IMP=CF.published.imp;CEN=CF.published.cen;
  GD=logiSlopes(CF.published.slope,CF.published.edi,i=>M[i].pub)}
 function runFit(){
- if(curve!=='eci'){const v=CURVES[curve];M.forEach((o,i)=>{o.e=v.theta[i];o.lo=o.hi=null});slope=RAW.slope;refit=false;IMP=v.imp;CEN=v.cen;GD=v.w;
+ if(curve!=='eci'){pubLogistic();const v=CURVES[curve];M.forEach((o,i)=>{o.e=v.theta[i];o.lo=o.hi=null});slope=RAW.slope;refit=false;IMP=v.imp;CEN=v.cen;GD=v.w;
   return v.label+': capability re-estimated jointly with this curve on all '+B.length+' benchmarks (method on the <a href="npca.html">nonparametric page</a>). Refits on a subset of benchmarks use the logistic, so choose the ECI curve to use them.'}
  const inc=B.filter(d=>d.on).map(d=>d.k);
  if(inc.length===B.length){setPublished();return 'Epoch’s published ECI, fitted on all '+B.length+' benchmarks, with its bootstrap 90% intervals.'}
@@ -193,6 +236,7 @@ function runFit(){
  const r=fitECI({nm:M.length,rows,benches:inc,anchor:anc,anchorDisc:FIT.dis[anc],cap0:FIT.cap,dif0:FIT.dif,dis0:FIT.dis,
   lowModel:LOW,highModel:HIGH,low:FIT.low[1],high:FIT.high[1],reg:FIT.reg,clip:FIT.clip});
  M.forEach((o,i)=>{o.e=r.eci[i];o.lo=o.hi=null});
+ LC=r.eci.slice();LP={a:B.map(d=>d.on?r.slope[d.k]:NaN),d:B.map(d=>d.on?r.edi[d.k]:NaN),refit:true};
  IMP=B.map(d=>d.on?d.p.map(q=>r.edi[d.k]+lg01(q[2])/r.slope[d.k]):CF.published.imp[d.k]);CEN=CF.published.cen;
  GD=logiSlopes(B.map(d=>d.on?r.slope[d.k]:0),B.map(d=>d.on?r.edi[d.k]:0),i=>M[i].e);
  const sl=inc.map(k=>r.slope[k]).sort((a,b)=>a-b);slope=sl.length%2?sl[(sl.length-1)/2]:(sl[sl.length/2-1]+sl[sl.length/2])/2;refit=true;
@@ -210,13 +254,14 @@ function changed(fromHash){
   if(lastGood){const keep=B.map(d=>d.on);B.forEach((d,i)=>d.on=lastGood[i]);try{runFit()}catch(_){setPublished()}B.forEach((d,i)=>d.on=keep[i])}else setPublished()}
  derive();build();if(!fromHash)saveHash();
 }
-function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:''].filter(Boolean).join('&');
+function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:''].filter(Boolean).join('&');
  try{history.replaceState(null,'',h?'#'+h:location.pathname+location.search)}catch(e){}}
 function readHash(){
  const g=k=>decodeURIComponent((location.hash.match(new RegExp(k+'=([^&]*)'))||[])[1]||'');
  const l=g('lab');lab=RAW.labs.includes(l)?l:'';ls.value=lab;
  curve=CURVES[g('curve')]?g('curve'):'eci';cs.value=curve;scale=g('scale')==='implied'?'implied':'logodds';
  FROM=[...fs_.options].some(o=>o.value===g('from'))?g('from'):RAW.start;fs_.value=FROM;syncButtons();
+ tab=g('tab')==='resid'?'resid':'frontier';rY=g('ry')==='linear'?'linear':'logodds';rShow=g('rshow')==='resid'?'resid':'scores';syncTabs();
  const off=new Set(g('drop').split('.').filter(Boolean).map(Number));B.forEach(d=>d.on=!off.has(d.k));
  if(off.size)document.getElementById('fitbox').open=true;
 }
@@ -277,6 +322,7 @@ const pct=[0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99];
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const esc=s=>s.replace(/%/g,'%%');
 function build(){
+ if(tab==='resid'){buildResid();return}
  const tr=[];
  B.forEach(d=>{
   const on=(!hl||hl===d.name)&&(!ha||ha===d.area), op=on?(d.on||hl===d.name?1:0.22):0.07, big=hl===d.name;
@@ -322,7 +368,98 @@ function build(){
   yaxis2:{title:narrow?null:{text:(lab?lab+' frontier':'Frontier')+(curve==='eci'?' ECI'+(refit?' (refit)':''):' capability ('+curveName()+')')+(scale==='implied'?' and implied by each score':''),font:{color:ink}},overlaying:'y',side:'left',range:r2,showgrid:false,zeroline:false,tickfont:{color:ink},dtick:10},
   hoverlabel:{font:{family:'Public Sans, system-ui, sans-serif'}}};
  Plotly.react('plot',tr,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']});
+ hookClick();
 }
+// ---- residual tab: one panel per benchmark, score against logistic capability ----
+let rY='logodds',rShow='scores',rX='own',rCol='date',rLab='',rSort='area';
+const LGMAX=Math.log((1-EPS)/EPS),sig=z=>1/(1+Math.exp(-z));
+const yearOf=d=>{const t=new Date(d);return t.getUTCFullYear()+(t-Date.UTC(t.getUTCFullYear(),0,1))/(365.25*DAY)};
+// Gaussian-kernel local average of (x,y): drawn only where at least ~3 points sit within a bandwidth
+function smooth(xs,ys,lo,hi){const h=Math.max(2.5,(hi-lo)/7),out=[];
+ for(let k=0;k<=48;k++){const x=lo+(hi-lo)*k/48;let sw=0,sy=0;xs.forEach((v,i)=>{const w=Math.exp(-0.5*((v-x)/h)**2);sw+=w;sy+=w*ys[i]});out.push([x,sw>=3?sy/sw:null])}
+ return out}
+function syncTabs(){
+ document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
+ document.getElementById('ftab').hidden=tab!=='frontier';document.getElementById('fnotes').hidden=tab!=='frontier';document.getElementById('rtab').hidden=tab!=='resid';
+ [['rshow',rShow],['ry',rY],['rx',rX],['rcol',rCol]].forEach(([k,v])=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.setAttribute('aria-pressed',b.dataset[k]===v)));
+}
+function buildResid(){
+ const el=document.getElementById('rplot'),ink=css('--ink'),mut=css('--muted'),grid=css('--grid'),acc=css('--accent');
+ el.style.width=(document.documentElement.clientWidth-32)+'px';el.style.marginLeft=(-document.querySelector('main').getBoundingClientRect().left)+'px';
+ const W=document.documentElement.clientWidth-32,narrow=W<600,C=W>=1400?7:W>=1150?6:W>=880?5:W>=600?3:2;
+ const resid=rShow==='resid',lo=rY==='logodds';
+ const dark=css('--bg').toLowerCase()==='#12151c';
+ // sequential single-hue ramp for release date: old = light, new = dark (reversed on the dark surface)
+ const ramp=dark?[[0,'#2b4a8f'],[1,'#c9dbff']]:[[0,'#b9cdf5'],[1,'#0b2a6b']];
+ const datesAll=M.map(o=>yearOf(o.d)),cmin=Math.floor(Math.min(...datesAll)),cmax=yearOf(RAW.snapshot);
+ // per-benchmark data under the current logistic
+ const P=B.map(d=>{let a=LP.a[d.k],dd=LP.d[d.k],own=true;
+  if(!(a>0)||!Number.isFinite(dd)){a=CF.published.slope[d.k];dd=CF.published.edi[d.k];own=false}
+  const pts=d.p.filter(q=>Number.isFinite(LC[q[0]])).map(q=>{const i=q[0],x=LC[i],s=q[2],z=a*(x-dd),f=sig(z),lz=Math.max(-LGMAX,Math.min(LGMAX,z)),l=lg01(s);
+   return{i,x,s,l,f,lz,pin:s<EPS||s>1-EPS,y:resid?(lo?l-lz:s-f):(lo?l:s)}});
+  const rl=Math.sqrt(pts.reduce((t,p)=>t+(p.l-p.lz)**2,0)/Math.max(1,pts.length)),rs=Math.sqrt(pts.reduce((t,p)=>t+(p.s-p.f)**2,0)/Math.max(1,pts.length));
+  // S-shaped misfit: how far a local average of log-odds residuals strays from zero (systematic, not noise)
+  const xs=pts.map(p=>p.x),xl=Math.min(...xs),xh=Math.max(...xs),sm=pts.length>4?smooth(xs,pts.map(p=>p.l-p.lz),xl,xh).filter(v=>v[1]!==null):[];
+  const curv=sm.length?Math.sqrt(sm.reduce((t,v)=>t+v[1]**2,0)/sm.length):0;
+  return{d,a,dd,own,pts,rl,rs,curv,xl,xh}}).filter(o=>o.pts.length);
+ const ord=P.slice().sort(rSort==='n'?(u,v)=>v.pts.length-u.pts.length:rSort==='rmse'?(u,v)=>v.rl-u.rl:rSort==='curv'?(u,v)=>v.curv-u.curv
+  :(u,v)=>D.areas.indexOf(u.d.area)-D.areas.indexOf(v.d.area)||u.d.name.localeCompare(v.d.name));
+ const R=Math.ceil(ord.length/C),PH=narrow?190:215,mt=rCol==='date'?70:28,mb=34,ml=narrow?34:44,mr=10,H=R*PH+mt+mb,hg=narrow?22:30,vg=46;
+ const Wp=W-ml-mr,Hp=H-mt-mb,pw=(Wp-(C-1)*hg)/C,ph=(Hp-(R-1)*vg)/R;
+ const allx=ord.flatMap(o=>o.pts.map(p=>p.x)),gx=[Math.floor(Math.min(...allx)/5)*5-2,Math.ceil(Math.max(...allx)/5)*5+2];
+ const ally=ord.flatMap(o=>o.pts.map(p=>Math.abs(p.y)));
+ const yr=!resid?(lo?[-5.2,5.2]:[-0.04,1.04]):(lo?(m=>[-m,m])(Math.min(9.5,Math.ceil(Math.max(...ally)*2+0.5)/2)):(m=>[-m,m])(Math.min(1,Math.ceil(Math.max(...ally)*10+0.5)/10)));
+ const ytick=!resid?(lo?{tickvals:[0.01,0.1,0.5,0.9,0.99].map(p=>Math.log(p/(1-p))),ticktext:['1%','10%','50%','90%','99%']}:{tickvals:[0,0.5,1],ticktext:['0%','50%','100%']})
+  :(lo?{dtick:yr[1]>6?4:2}:{tickvals:[-0.5,-0.25,0,0.25,0.5].filter(v=>Math.abs(v)<=yr[1]),ticktext:['−50','−25','0','+25','+50'].filter((t,i)=>Math.abs([-0.5,-0.25,0,0.25,0.5][i])<=yr[1])});
+ const tr=[],layout={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Public Sans, system-ui, sans-serif',color:ink,size:10},
+  margin:{l:ml,r:mr,t:mt,b:mb},height:H,showlegend:false,hovermode:'closest',dragmode:narrow?false:'zoom',annotations:[],shapes:[],hoverlabel:{font:{family:'Public Sans, system-ui, sans-serif',size:12}}};
+ ord.forEach((o,k)=>{
+  const c=k%C,r=Math.floor(k/C),xa='x'+(k?k+1:''),ya='y'+(k?k+1:'');
+  const x0=(c*(pw+hg))/Wp,y1=1-(r*(ph+vg))/Hp;
+  const xr=rX==='shared'?gx:[o.xl-(o.xh-o.xl)*0.06-1,o.xh+(o.xh-o.xl)*0.06+1];
+  layout['xaxis'+(k?k+1:'')]={domain:[x0,x0+pw/Wp],anchor:ya,range:xr,gridcolor:grid,zeroline:false,showline:true,linecolor:css('--line'),tickfont:{size:9,color:mut},nticks:5,fixedrange:narrow};
+  layout['yaxis'+(k?k+1:'')]=Object.assign({domain:[y1-ph/Hp,y1],anchor:xa,range:yr,gridcolor:grid,zeroline:false,showline:true,linecolor:css('--line'),tickfont:{size:9,color:mut},showticklabels:c===0,fixedrange:narrow},ytick);
+  const n=o.d.name.length>34?short(o.d.name).slice(0,33)+'…':short(o.d.name);
+  layout.annotations.push({xref:'paper',yref:'paper',x:x0,y:y1,xanchor:'left',yanchor:'bottom',yshift:3,showarrow:false,align:'left',
+   text:'<b>'+n.replace(/</g,'&lt;')+'</b><br><span style="color:'+mut+'">n '+o.pts.length+(narrow?' · RMSE '+o.rl.toFixed(2)+' lgt'+(o.own?'':' · not in refit')+'</span>':' · slope '+o.a.toFixed(3).replace(/^0/,'')+' · RMSE '+o.rl.toFixed(2)+' lgt, '+(o.rs*100).toFixed(1)+' pts'+(o.own?'':' · not in refit')+'</span>'),
+   font:{size:narrow?9:10,color:ink},hovertext:o.d.name+' ('+o.d.area+(o.d.rel?', released '+o.d.rel:'')+')<br>difficulty '+o.dd.toFixed(1)+', slope '+o.a.toFixed(3)+' logits per ECI point'+(o.own?'':'<br>Left out of the refit: curve and capabilities are not jointly fitted')});
+  // swatch for area
+  layout.shapes.push({type:'rect',xref:'paper',yref:'paper',x0:x0+(pw-3)/Wp,x1:x0+pw/Wp,y0:y1-ph/Hp,y1:y1,fillcolor:o.d.col,line:{width:0},layer:'below',opacity:.9});
+  // fitted logistic (or the zero line it becomes in residual view)
+  const xsC=Array.from({length:61},(_,j)=>xr[0]+(xr[1]-xr[0])*j/60);
+  if(resid) layout.shapes.push({type:'line',xref:xa,yref:ya,x0:xr[0],x1:xr[1],y0:0,y1:0,line:{color:ink,width:1.3}});
+  else tr.push({x:xsC,y:xsC.map(x=>{const z=o.a*(x-o.dd);return lo?z:sig(z)}),xaxis:xa,yaxis:ya,type:'scatter',mode:'lines',line:{color:ink,width:1.4},hoverinfo:'skip'});
+  // points
+  const op=o.pts.map(p=>rLab&&M[p.i].l!==rLab?0.15:0.85);
+  tr.push({x:o.pts.map(p=>p.x),y:o.pts.map(p=>Math.max(yr[0],Math.min(yr[1],p.y))),xaxis:xa,yaxis:ya,type:'scatter',mode:'markers',name:o.d.name,
+   marker:{size:rLab?o.pts.map(p=>M[p.i].l===rLab?7:5):5.5,opacity:op,symbol:o.pts.map(p=>p.pin?'circle-open':'circle'),
+    color:rCol==='date'?o.pts.map(p=>datesAll[p.i]):o.d.col,cmin,cmax,colorscale:ramp,
+    line:rCol==='date'?{width:o.pts.map(p=>p.pin?1.4:0),color:o.pts.map(p=>datesAll[p.i]),colorscale:ramp,cmin,cmax}:{width:o.pts.map(p=>p.pin?1.4:0.5),color:o.pts.map(p=>p.pin?o.d.col:css('--bg'))},
+    showscale:rCol==='date'&&k===0,colorbar:{orientation:'h',x:1,xanchor:'right',y:1,yanchor:'top',ypad:8,yref:'container',len:Math.min(320,W*0.5),lenmode:'pixels',thickness:9,
+     outlinewidth:0,tickfont:{size:10,color:mut},title:{text:'Release date',side:'left',font:{size:11,color:mut}},tickvals:Array.from({length:cmax-cmin+1},(_,j)=>cmin+j).filter(y=>!narrow||y%2===0),ticktext:Array.from({length:cmax-cmin+1},(_,j)=>String(cmin+j)).filter(y=>!narrow||y%2===0)}},
+   customdata:o.pts.map(p=>{const m=M[p.i];return[m.m.replace(/</g,''),m.l,m.d,(p.s*100).toFixed(1)+'%'+(p.pin?' (shown at '+(p.s<EPS?'1':'99')+'%)':''),(p.f*100).toFixed(1)+'%',
+     (lo?(p.l-p.lz>=0?'+':'')+(p.l-p.lz).toFixed(2)+' logits':((p.s-p.f)>=0?'+':'')+((p.s-p.f)*100).toFixed(1)+' pts')]}),
+   hovertemplate:'<b>%{customdata[0]}</b><br>%{customdata[1]}, %{customdata[2]}<br>'+esc(o.d.name)+': %{customdata[3]}<br>Logistic predicts %{customdata[4]} at '+(LP.refit?'refit ECI':'ECI')+' %{x:.1f}<br>Residual %{customdata[5]}<extra></extra>'});
+  // local average of the plotted points
+  if(o.pts.length>4){const sm=smooth(o.pts.map(p=>p.x),o.pts.map(p=>p.y),o.xl,o.xh);
+   tr.push({x:sm.map(v=>v[0]),y:sm.map(v=>v[1]),xaxis:xa,yaxis:ya,type:'scatter',mode:'lines',connectgaps:false,line:{color:acc,width:2.2,dash:'dot'},hoverinfo:'skip'})}
+ });
+ layout.annotations.push({xref:'paper',yref:'paper',x:0.5,y:0,yshift:-mb+2,yanchor:'bottom',showarrow:false,text:(LP.refit?'Refitted ECI':'ECI')+' (each model’s capability)',font:{size:11,color:mut}});
+ Plotly.react('rplot',tr,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d','autoScale2d']});
+ const what=LP.refit?'ECI refitted on the '+B.filter(d=>d.on).length+' benchmarks chosen below':'Epoch’s published ECI';
+ document.getElementById('title').textContent='Does each benchmark follow a logistic in ECI?';
+ document.getElementById('lede').textContent='One panel per benchmark: every model’s score against its '+(LP.refit?'refitted ':'')+'ECI ('+ord.length+' benchmarks, '+ord.reduce((t,o)=>t+o.pts.length,0).toLocaleString()+' scores). '
+  +(resid?'Each point is the score minus what the benchmark’s fitted logistic predicts, '+(lo?'in log-odds':'in percentage points')+'; under the logistic assumption these scatter evenly around zero with no trend.'
+   :(lo?'In log-odds, ECI’s logistic is a straight line, so a bend in the points is a departure from the logistic.':'On a linear axis, ECI’s logistic is an S-curve.'))
+  +' Hover a point for the model, its score and its residual.'+(curve!=='eci'?' (These panels always use the logistic: '+what+'.)':'');
+ document.getElementById('rkey').innerHTML='<span><i style="border-color:'+ink+'"></i>'+(resid?'zero: the fitted logistic':'fitted logistic ('+what+')')+'</span><span><i style="border-color:'+acc+';border-top-style:dotted;border-top-width:3px"></i>local average of the points (Gaussian kernel)</span><span>○ hollow: score of 0% or 100%, drawn at 1% / 99%</span><span>coloured strip: benchmark area</span>';
+ document.getElementById('rnotes').innerHTML='<p>Each panel uses the capabilities and the curve of the same fit: '+what+', where every benchmark has score = sigmoid(slope × (ECI − difficulty)). Epoch fits by least squares in score units, so a residual of a few points near 0% or 100% costs it little even when it is large in log-odds; switch between the two y-axes to see both. The panel subtitle gives each benchmark’s number of scores, its fitted slope (logits per ECI point), and the root-mean-square residual in logits (scores pinned to 1%–99%) and in percentage points. “Most S-shaped misfit first” ranks benchmarks by how far the local average of log-odds residuals strays from zero, i.e. systematic rather than random misfit. The local average uses a Gaussian kernel with bandwidth one-seventh of the panel’s ECI range (at least 2.5 points) and is drawn only where about three or more scores lie within one bandwidth. Release-date colour runs from '+cmin+' (light) to the '+RAW.snapshot+' snapshot (dark): a run of dark points above or below the curve means newer models systematically beat or miss the logistic. All '+M.length+' models with scores are shown, including those before GPT-4. Untick benchmarks under “Benchmarks in the ECI fit” to refit ECI on the rest; the panels then show the refit. Panels drawn with “not in refit” keep their published curve, against the refitted capabilities.</p>';
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;syncTabs();derive();build();saveHash()});
+[['rshow',v=>rShow=v],['ry',v=>rY=v],['rx',v=>rX=v],['rcol',v=>rCol=v]].forEach(([k,f])=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.onclick=()=>{f(b.dataset[k]);syncTabs();build();saveHash()}));
+const rls=document.getElementById('rlab');RAW.labs.forEach(l=>{const o=document.createElement('option');o.value=o.textContent=l;rls.appendChild(o)});
+rls.onchange=()=>{rLab=rls.value;build()};
+document.getElementById('rsort').onchange=e=>{rSort=e.target.value;build()};
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',x===b));build()});
 function syncButtons(){document.querySelectorAll('[data-scale]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.scale===scale));
  document.querySelector('[data-ax]').parentElement.style.display=scale==='implied'?'none':''}
@@ -337,8 +474,8 @@ ls.onchange=()=>{lab=ls.value;derive();build();saveHash()};
 addEventListener('hashchange',()=>{readHash();changed(true)});
 readHash();changed(true);
 if(document.fonts)document.fonts.ready.then(build);
-const el=document.getElementById('plot');
-el.on('plotly_click',e=>{const n=e.points[0].data.name;if(!n||n==='Frontier ECI'||n==='Overall frontier'||n==='Published frontier'||n.startsWith('trace'))return;hl=(hl===n)?'':n;sel.value=hl;build()});
+function hookClick(){const el=document.getElementById('plot');if(el._clk||!el.on)return;el._clk=1;
+el.on('plotly_click',e=>{const n=e.points[0].data.name;if(!n||n==='Frontier ECI'||n==='Overall frontier'||n==='Published frontier'||n.startsWith('trace'))return;hl=(hl===n)?'':n;sel.value=hl;build()});}
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',build);
 }catch(err){console.error(err);showFallback()}
 </script></body></html>
