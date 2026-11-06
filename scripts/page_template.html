@@ -7,10 +7,10 @@
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-strict-dist-min@2.35.2/plotly-strict.min.js"></script>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
- --bg:#fbfbf8;--ink:#1d2433;--muted:#5d6577;--grid:#e3e5ea;--panel:#ffffff;--line:#d4d7de;--accent:#2f5bd3;--eci:#111827;--band:rgba(17,24,39,.12);--labelbg:rgba(251,251,248,.82)}
+ --bg:#fbfbf8;--ink:#1d2433;--muted:#5d6577;--grid:#e3e5ea;--panel:#ffffff;--line:#d4d7de;--accent:#2f5bd3;--eci:#111827;--band:rgba(17,24,39,.12);--labelbg:rgba(251,251,248,.82);--nullband:rgba(47,91,211,.14)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151c;--ink:#e6e8ee;--muted:#9aa2b3;--grid:#262b36;--panel:#181c25;--line:#323846;--accent:#8fb0ff;--eci:#ffffff;--band:rgba(255,255,255,.14);--labelbg:rgba(18,21,28,.82)}}
-:root[data-theme="dark"]{--bg:#12151c;--ink:#e6e8ee;--muted:#9aa2b3;--grid:#262b36;--panel:#181c25;--line:#323846;--accent:#8fb0ff;--eci:#ffffff;--band:rgba(255,255,255,.14);--labelbg:rgba(18,21,28,.82)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151c;--ink:#e6e8ee;--muted:#9aa2b3;--grid:#262b36;--panel:#181c25;--line:#323846;--accent:#8fb0ff;--eci:#ffffff;--band:rgba(255,255,255,.14);--labelbg:rgba(18,21,28,.82);--nullband:rgba(143,176,255,.17)}}
+:root[data-theme="dark"]{--bg:#12151c;--ink:#e6e8ee;--muted:#9aa2b3;--grid:#262b36;--panel:#181c25;--line:#323846;--accent:#8fb0ff;--eci:#ffffff;--band:rgba(255,255,255,.14);--labelbg:rgba(18,21,28,.82);--nullband:rgba(143,176,255,.17)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:1180px;margin:0 auto;padding:20px 16px 32px}
@@ -49,6 +49,8 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(-
 nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 #rplot{width:100%;min-height:400px}
 .rkey{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted);margin:2px 0 4px}
+.rkey b.bd{display:inline-block;width:18px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px;background:var(--nullband)}
+#rsum{font-size:13.5px;margin:2px 0 6px;max-width:100ch}
 .rkey i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
 #plot{width:100%;height:min(86vh,900px);min-height:600px}
 .notes{color:var(--muted);font-size:13.5px;max-width:82ch;margin-top:10px}
@@ -113,9 +115,10 @@ nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2p
   <button data-rcol="area" aria-pressed="false">Colour by area</button>
  </div>
  <label>Highlight lab <select id="rlab"><option value="">None</option></select></label>
- <label>Order <select id="rsort"><option value="area">By area</option><option value="hard">Hardest to easiest (difficulty)</option><option value="easy">Easiest to hardest (difficulty)</option><option value="n">Most scores first</option><option value="rmse">Worst fit first (log-odds RMSE)</option><option value="curv">Most S-shaped misfit first</option></select></label>
+ <label>Order <select id="rsort"><option value="area">By area</option><option value="hard">Hardest to easiest (difficulty)</option><option value="easy">Easiest to hardest (difficulty)</option><option value="n">Most scores first</option><option value="rmse">Worst fit first (log-odds RMSE)</option><option value="p">Least consistent with the logistic first</option></select></label>
 </div>
 <div class="rkey" id="rkey"></div>
+<p id="rsum"></p>
 <div id="rplot"></div>
 <div class="notes" id="rnotes"></div>
 </div>
@@ -136,7 +139,7 @@ function showFallback(){document.getElementById('plot').hidden=true;document.que
 /*SOLVER*/
 if(typeof Plotly==='undefined'){showFallback()}
 else try{
-const RAW=/*DATA*/,CF=/*CURVES*/;
+const RAW=/*DATA*/,CF=/*CURVES*/,RN=/*RNULL*/;
 const sel=document.getElementById('hl'),FIT=RAW.fit,EPS=0.01;
 const lg01=p=>{p=Math.min(Math.max(p,EPS),1-EPS);return Math.log(p/(1-p))};
 const D={areas:RAW.areas,cols:RAW.cols},B=RAW.b.map((b,k)=>({k,name:b.name,rel:b.rel,area:b.area,p:b.p.map((q,j)=>[q[0],lg01(q[1]),q[1],j]),on:true,fr:[],all:[]}));
@@ -372,7 +375,7 @@ function build(){
 }
 // ---- residual tab: one panel per benchmark, score against logistic capability ----
 let rY='logodds',rShow='scores',rX='shared',rCol='date',rLab='',rSort='area';
-const LGMAX=Math.log((1-EPS)/EPS),sig=z=>1/(1+Math.exp(-z));
+const LGMAX=Math.log((1-EPS)/EPS),sig=z=>1/(1+Math.exp(-z)),fmtP=v=>v<0.001?'<.001':v<0.01?v.toFixed(3).replace(/^0/,''):v.toFixed(2).replace(/^0/,'');
 const yearOf=d=>{const t=new Date(d);return t.getUTCFullYear()+(t-Date.UTC(t.getUTCFullYear(),0,1))/(365.25*DAY)};
 // Gaussian-kernel local average of (x,y): drawn only where at least ~3 points sit within a bandwidth
 function smooth(xs,ys,lo,hi){const h=Math.max(2.5,(hi-lo)/7),out=[];
@@ -398,11 +401,13 @@ function buildResid(){
   const pts=d.p.filter(q=>Number.isFinite(LC[q[0]])).map(q=>{const i=q[0],x=LC[i],s=q[2],z=a*(x-dd),f=sig(z),lz=Math.max(-LGMAX,Math.min(LGMAX,z)),l=lg01(s);
    return{i,x,s,l,f,lz,pin:s<EPS||s>1-EPS,y:resid?(lo?l-lz:s-f):(lo?l:s)}});
   const rl=Math.sqrt(pts.reduce((t,p)=>t+(p.l-p.lz)**2,0)/Math.max(1,pts.length)),rs=Math.sqrt(pts.reduce((t,p)=>t+(p.s-p.f)**2,0)/Math.max(1,pts.length));
-  // S-shaped misfit: how far a local average of log-odds residuals strays from zero (systematic, not noise)
+  // systematic misfit: how far a local average of log-odds residuals strays from zero (same statistic as scripts/resid_null.py)
   const xs=pts.map(p=>p.x),xl=Math.min(...xs),xh=Math.max(...xs),sm=pts.length>4?smooth(xs,pts.map(p=>p.l-p.lz),xl,xh).filter(v=>v[1]!==null):[];
   const curv=sm.length?Math.sqrt(sm.reduce((t,v)=>t+v[1]**2,0)/sm.length):0;
-  return{d,a,dd,own,pts,rl,rs,curv,xl,xh}}).filter(o=>o.pts.length);
- const ord=P.slice().sort(rSort==='n'?(u,v)=>v.pts.length-u.pts.length:rSort==='rmse'?(u,v)=>v.rl-u.rl:rSort==='curv'?(u,v)=>v.curv-u.curv:rSort==='hard'?(u,v)=>v.dd-u.dd:rSort==='easy'?(u,v)=>u.dd-v.dd
+  // null band and bootstrap p: only for Epoch's published fit, which is what was simulated
+  const nb=!LP.refit&&RN.b[d.k]&&RN.b[d.k].name===d.name?RN.b[d.k]:null;
+  return{d,a,dd,own,pts,rl,rs,curv,xl,xh,nb,pv:nb?nb.p:null}}).filter(o=>o.pts.length);
+ const ord=P.slice().sort(rSort==='n'?(u,v)=>v.pts.length-u.pts.length:rSort==='rmse'?(u,v)=>v.rl-u.rl:rSort==='p'?(u,v)=>(u.pv??1)-(v.pv??1)||v.curv-u.curv:rSort==='hard'?(u,v)=>v.dd-u.dd:rSort==='easy'?(u,v)=>u.dd-v.dd
   :(u,v)=>D.areas.indexOf(u.d.area)-D.areas.indexOf(v.d.area)||u.d.name.localeCompare(v.d.name));
  const R=Math.ceil(ord.length/C),PH=narrow?190:215,mt=rCol==='date'?70:28,mb=34,ml=narrow?34:44,mr=10,H=R*PH+mt+mb,hg=narrow?22:30,vg=46;
  const Wp=W-ml-mr,Hp=H-mt-mb,pw=(Wp-(C-1)*hg)/C,ph=(Hp-(R-1)*vg)/R;
@@ -421,14 +426,19 @@ function buildResid(){
   layout['yaxis'+(k?k+1:'')]=Object.assign({domain:[y1-ph/Hp,y1],anchor:xa,range:yr,gridcolor:grid,zeroline:false,showline:true,linecolor:css('--line'),tickfont:{size:9,color:mut},showticklabels:c===0,fixedrange:narrow},ytick);
   const n=o.d.name.length>34?short(o.d.name).slice(0,33)+'…':short(o.d.name);
   layout.annotations.push({xref:'paper',yref:'paper',x:x0,y:y1,xanchor:'left',yanchor:'bottom',yshift:3,showarrow:false,align:'left',
-   text:'<b>'+n.replace(/</g,'&lt;')+'</b><br><span style="color:'+mut+'">'+(rSort==='hard'||rSort==='easy'?'difficulty '+o.dd.toFixed(1)+' · ':'')+'n '+o.pts.length+(narrow?' · RMSE '+o.rl.toFixed(2)+' lgt'+(o.own?'':' · not in refit')+'</span>':(rSort==='hard'||rSort==='easy'?'':' · slope '+o.a.toFixed(3).replace(/^0/,''))+' · RMSE '+o.rl.toFixed(2)+' lgt, '+(o.rs*100).toFixed(1)+' pts'+(o.own?'':' · not in refit')+'</span>'),
-   font:{size:narrow?9:10,color:ink},hovertext:o.d.name+' ('+o.d.area+(o.d.rel?', released '+o.d.rel:'')+')<br>difficulty '+o.dd.toFixed(1)+', slope '+o.a.toFixed(3)+' logits per ECI point'+(o.own?'':'<br>Left out of the refit: curve and capabilities are not jointly fitted')});
+   text:'<b>'+n.replace(/</g,'&lt;')+'</b><br><span style="color:'+mut+'">'+(rSort==='hard'||rSort==='easy'?'difficulty '+o.dd.toFixed(1)+' · ':'')+'n '+o.pts.length+(narrow?'':' · RMSE '+(o.rs*100).toFixed(1)+' pts')+(o.pv!=null?' · '+(o.pv<=0.05?'<b style="color:'+ink+'">misfit p '+fmtP(o.pv)+'</b>':'misfit p '+fmtP(o.pv)):'')+(o.own?'':' · not in refit')+'</span>',
+   font:{size:narrow?9:10,color:ink},hovertext:o.d.name+' ('+o.d.area+(o.d.rel?', released '+o.d.rel:'')+')<br>difficulty '+o.dd.toFixed(1)+', slope '+o.a.toFixed(3)+' logits per ECI point'+'<br>score RMSE '+(o.rs*100).toFixed(1)+' pts, '+o.rl.toFixed(2)+' logits (scores pinned to 1–99%)'+(o.nb?'<br>Systematic misfit '+o.nb.mis.toFixed(2)+' logits; '+o.nb.null_mis.toFixed(2)+' expected from noise alone; p = '+fmtP(o.nb.p)+' (share of '+RN.summary.sims+' simulated datasets at least this far off)':'')+(o.own?'':'<br>Left out of the refit: curve and capabilities are not jointly fitted')});
   // swatch for area
   layout.shapes.push({type:'rect',xref:'paper',yref:'paper',x0:x0+(pw-3)/Wp,x1:x0+pw/Wp,y0:y1-ph/Hp,y1:y1,fillcolor:o.d.col,line:{width:0},layer:'below',opacity:.9});
   // fitted logistic (or the zero line it becomes in residual view)
+  // centre: what the residual is measured from, in the plotted units
+  const cen=x=>{const z=o.a*(x-o.dd);return resid?0:lo?Math.max(-LGMAX,Math.min(LGMAX,z)):sig(z)};
   const xsC=Array.from({length:61},(_,j)=>xr[0]+(xr[1]-xr[0])*j/60);
   if(resid) layout.shapes.push({type:'line',xref:xa,yref:ya,x0:xr[0],x1:xr[1],y0:0,y1:0,line:{color:ink,width:1.3}});
   else tr.push({x:xsC,y:xsC.map(x=>{const z=o.a*(x-o.dd);return lo?z:sig(z)}),xaxis:xa,yaxis:ya,type:'scatter',mode:'lines',line:{color:ink,width:1.4},hoverinfo:'skip'});
+  if(o.nb&&o.pts.length>4){const bd=o.nb.band[lo?'rl':'rs'],ix=o.nb.grid.map((g,j)=>j).filter(j=>bd[0][j]!=null&&bd[1][j]!=null);
+   if(ix.length>1){const xs=ix.map(j=>o.nb.grid[j]);
+    tr.push({x:xs.concat(xs.slice().reverse()),y:ix.map(j=>cen(o.nb.grid[j])+bd[1][j]).concat(ix.slice().reverse().map(j=>cen(o.nb.grid[j])+bd[0][j])),xaxis:xa,yaxis:ya,type:'scatter',mode:'lines',fill:'toself',fillcolor:css('--nullband'),line:{width:0},hoverinfo:'skip'})}}
   // points
   const op=o.pts.map(p=>rLab&&M[p.i].l!==rLab?0.15:0.85);
   tr.push({x:o.pts.map(p=>p.x),y:o.pts.map(p=>Math.max(yr[0],Math.min(yr[1],p.y))),xaxis:xa,yaxis:ya,type:'scatter',mode:'markers',name:o.d.name,
@@ -441,19 +451,30 @@ function buildResid(){
      (lo?(p.l-p.lz>=0?'+':'')+(p.l-p.lz).toFixed(2)+' logits':((p.s-p.f)>=0?'+':'')+((p.s-p.f)*100).toFixed(1)+' pts')]}),
    hovertemplate:'<b>%{customdata[0]}</b><br>%{customdata[1]}, %{customdata[2]}<br>'+esc(o.d.name)+': %{customdata[3]}<br>Logistic predicts %{customdata[4]} at '+(LP.refit?'refit ECI':'ECI')+' %{x:.1f}<br>Residual %{customdata[5]}<extra></extra>'});
   // local average of the plotted points
-  if(o.pts.length>4){const sm=smooth(o.pts.map(p=>p.x),o.pts.map(p=>p.y),o.xl,o.xh);
+  // local average = fitted curve + kernel average of residuals (averaging raw scores would bend towards the middle at the data's edges)
+  if(o.pts.length>4){const sm=smooth(o.pts.map(p=>p.x),o.pts.map(p=>lo?p.l-p.lz:p.s-p.f),o.xl,o.xh).map(v=>[v[0],v[1]===null?null:cen(v[0])+v[1]]);
    tr.push({x:sm.map(v=>v[0]),y:sm.map(v=>v[1]),xaxis:xa,yaxis:ya,type:'scatter',mode:'lines',connectgaps:false,line:{color:acc,width:2.2,dash:'dot'},hoverinfo:'skip'})}
  });
  layout.annotations.push({xref:'paper',yref:'paper',x:0.5,y:0,yshift:-mb+2,yanchor:'bottom',showarrow:false,text:(LP.refit?'Refitted ECI':'ECI')+' (each model’s capability)',font:{size:11,color:mut}});
  Plotly.react('rplot',tr,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d','autoScale2d']});
  const what=LP.refit?'ECI refitted on the '+B.filter(d=>d.on).length+' benchmarks chosen below':'Epoch’s published ECI';
  document.getElementById('title').textContent='Does each benchmark follow a logistic in ECI?';
- document.getElementById('lede').textContent='One panel per benchmark: every model’s score against its '+(LP.refit?'refitted ':'')+'ECI ('+ord.length+' benchmarks, '+ord.reduce((t,o)=>t+o.pts.length,0).toLocaleString()+' scores). '
-  +(resid?'Each point is the score minus what the benchmark’s fitted logistic predicts, '+(lo?'in log-odds':'in percentage points')+'; under the logistic assumption these scatter evenly around zero with no trend.'
-   :(lo?'In log-odds, ECI’s logistic is a straight line, so a bend in the points is a departure from the logistic.':'On a linear axis, ECI’s logistic is an S-curve.'))
-  +' Hover a point for the model, its score and its residual.'+(curve!=='eci'?' (These panels always use the logistic: '+what+'.)':'');
- document.getElementById('rkey').innerHTML='<span><i style="border-color:'+ink+'"></i>'+(resid?'zero: the fitted logistic':'fitted logistic ('+what+')')+'</span><span><i style="border-color:'+acc+';border-top-style:dotted;border-top-width:3px"></i>local average of the points (Gaussian kernel)</span><span>○ hollow: score of 0% or 100%, drawn at 1% / 99%</span><span>coloured strip: benchmark area</span>';
- document.getElementById('rnotes').innerHTML='<p>Each panel uses the capabilities and the curve of the same fit: '+what+', where every benchmark has score = sigmoid(slope × (ECI − difficulty)). Epoch fits by least squares in score units, so a residual of a few points near 0% or 100% costs it little even when it is large in log-odds; switch between the two y-axes to see both. The panel subtitle gives each benchmark’s number of scores, its fitted slope (logits per ECI point), and the root-mean-square residual in logits (scores pinned to 1%–99%) and in percentage points. Difficulty is the ECI at which the fitted logistic predicts 50%; the difficulty orderings sort panels by it. “Most S-shaped misfit first” ranks benchmarks by how far the local average of log-odds residuals strays from zero, i.e. systematic rather than random misfit. The local average uses a Gaussian kernel with bandwidth one-seventh of the panel’s ECI range (at least 2.5 points) and is drawn only where about three or more scores lie within one bandwidth. Release-date colour runs from '+cmin+' (light) to the '+RAW.snapshot+' snapshot (dark): a run of dark points above or below the curve means newer models systematically beat or miss the logistic. All '+M.length+' models with scores are shown, including those before GPT-4. Untick benchmarks under “Benchmarks in the ECI fit” to refit ECI on the rest; the panels then show the refit. Panels drawn with “not in refit” keep their published curve, against the refitted capabilities.</p>';
+ const NS=RN.summary,showNull=!LP.refit;
+ document.getElementById('lede').textContent='One panel per benchmark: every model’s score against its '+(LP.refit?'refitted ':'')+'ECI ('+ord.length+' benchmarks, '+ord.reduce((t,o)=>t+o.pts.length,0).toLocaleString()+' scores), '
+  +(resid?'as the residual from the benchmark’s fitted logistic, '+(lo?'in log-odds':'in percentage points')+'.':'with the benchmark’s fitted logistic'+(lo?', which is a straight line in log-odds.':', an S-curve on this linear axis.'))
+  +' The dotted line is the local average of the residuals'+(resid?'':', drawn around the curve')+'. '
+  +(showNull?'The shaded band is where that average stays in 90% of datasets simulated from Epoch’s fit and then refitted, i.e. if the logistic were exactly true. Even then the average wanders by chance, more so where a benchmark has few scores. A dotted line inside the band is consistent with the logistic; one that leaves it is evidence against.'
+   :'The simulated band and p-values are only available for Epoch’s published fit, not for refits.')
+  +' Hover a point for the model, its score and its residual.'+(curve!=='eci'?' These panels always use the logistic ('+what+').':'');
+ document.getElementById('rkey').innerHTML='<span><i style="border-color:'+ink+'"></i>'+(resid?'zero: the fitted logistic':'fitted logistic ('+what+')')+'</span><span><i style="border-color:'+acc+';border-top-style:dotted;border-top-width:3px"></i>local average of residuals</span>'
+  +(showNull?'<span><b class="bd"></b>90% band for that average if the logistic were exact</span>':'')+'<span>○ score of 0% or 100%, drawn at 1% / 99%</span><span>coloured strip: benchmark area</span>';
+ document.getElementById('rsum').innerHTML=showNull?'<b>How many benchmarks misfit?</b> If the logistic held exactly, about '+NS.expected_p05.toFixed(0)+' of '+RN.b.length+' benchmarks would reach misfit p ≤ 0.05 by chance; '+NS.n_p05+' do ('+NS.n_p01+' at p ≤ 0.01). Taking all benchmarks together, '+(NS.p_all<=1/(NS.sims+1)+1e-9?'none of the '+NS.sims+' simulated datasets misfit as much as the real one (p < '+(1/NS.sims).toFixed(3).replace(/^0/,'')+')':'p = '+fmtP(NS.p_all))+'. Misfit here means the scores stray from the curve more systematically than noise explains. That could be the wrong curve shape, but it could also be models being stronger in some areas than their single ECI says (see the notes below).':'';
+ document.getElementById('rnotes').innerHTML='<p><b>What is plotted.</b> Each panel uses the capabilities and curves of one fit: '+what+'. Every benchmark has score = sigmoid(slope × (ECI − difficulty)), and the published slopes and difficulties are Epoch’s own (edi_scores.csv; our reimplementation matches them to within 0.5%). The log-odds residual is logit(score) − slope × (ECI − difficulty), with scores and predictions both held to 1%–99%. The score residual is score − predicted score, in percentage points. All '+M.length+' models with scores are shown, including those before GPT-4. Release-date colour runs from '+cmin+' (light) to the '+RAW.snapshot+' snapshot (dark).</p>'
+  +'<p><b>Why a band, and not just the line at zero.</b> Several things can bend the local average even when the logistic is exactly right. (1) Each model’s ECI is fitted from these same scores, so its own scores pull it towards them and residuals shrink, most for models with few scores. (2) ECI is a noisy estimate, and scores plotted against a noisy x flatten at both ends. (3) Near 0% a noisy score is often exactly 0, pinned at 1% in log-odds, and likewise near 100%. (4) Many benchmarks have only 10–40 scores, so the average wanders by chance. In the simulations, effects 1–3 largely cancel: the fitted slopes absorb them, and the band is centred within about 0.1 logits of zero almost everywhere. The band’s width is the point. It shows how far the average wanders from noise alone, typically ±0.25 logits and much more for sparse benchmarks.</p>'
+  +'<p><b>How the band is made</b> (scripts/resid_null.py, '+NS.sims+' simulations). Each simulated score is drawn as Binomial(N, p)/N, with p from Epoch’s fitted curve at the model’s published ECI. N is an effective number of items per benchmark, chosen so the simulated scatter matches each benchmark’s real scatter: real residual spread scales like √(p(1−p)), as it would for a test of about 30 items, and this reproduces the share of exact zeros near the floor. Every simulated dataset is refitted with Epoch’s objective and 130/150 anchors, and the local average is recomputed exactly as on this page. The band is simultaneous: in 90% of simulations the local average stays inside it along its whole length. So about 1 panel in 10 crosses it somewhere by chance (about '+Math.round(RN.b.length/10)+' of '+RN.b.length+'). The band and p can disagree: the band flags a departure anywhere along the range, while p measures the departure over the whole range. A panel can therefore have a low p and stay inside the band, or leave the band briefly with an unremarkable p.</p>'
+  +'<p><b>Misfit p.</b> The misfit statistic is the root-mean-square of the local average of log-odds residuals, over the benchmark’s range. p is the share of simulated datasets with misfit at least as large; hover a panel title to see the expected value. “Least consistent with the logistic first” orders panels by p. The joint test above sums each benchmark’s misfit², scaled by its expected value, and compares the total with the same sum in each simulation.</p>'
+  +'<p><b>What a low p does and does not show.</b> The null is the whole of Epoch’s model: one capability per model, a logistic per benchmark, and independent noise. A low p rejects that package, not just the curve shape. Other explanations include (a) models stronger in some areas than their ECI says (e.g. reasoning models on maths), (b) scores that move together within a model or lab (shared scaffolds, evaluation settings, contamination), and (c) a benchmark’s version or harness changing over time. The release-date colours help here: in a panel where newer models sit above the curve at the same ECI, something time-related is going on that a single capability doesn’t capture. Two biases run in opposite directions. Setting N to match the real scatter counts any real misfit as noise, which widens the band and makes p conservative. Real noise that is correlated within a model, which the simulation leaves out, makes the real local average wander more than the simulated one, which makes p too small. With '+RN.b.length+' benchmarks, also expect a few low p values by chance.</p>'
+  +'<p><b>Units.</b> Epoch fits by least squares in score units, so a miss near 0% or 100% costs its fit little even when it is large in log-odds. The log-odds view, the logit RMSE and the misfit statistic all emphasise the tails, which is where the logistic is most at issue but also where pinning and floor noise are largest. Switch to the linear axis to see the misses as the fit weighs them. The local average uses a Gaussian kernel with bandwidth one-seventh of the benchmark’s ECI range (at least 2.5 points), and is drawn only where about three or more scores lie within a bandwidth. Untick benchmarks under “Benchmarks in the ECI fit” to refit ECI on the rest. The panels then show the refit, without band or p, and panels marked “not in refit” keep their published curve, plotted against the refitted capabilities.</p>';
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;syncTabs();derive();build();saveHash()});
 [['rshow',v=>rShow=v],['ry',v=>rY=v],['rx',v=>rX=v],['rcol',v=>rCol=v]].forEach(([k,f])=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.onclick=()=>{f(b.dataset[k]);syncTabs();build();saveHash()}));

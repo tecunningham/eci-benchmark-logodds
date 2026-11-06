@@ -133,7 +133,8 @@ Written for the next Claude session working in this repo. Read this first, then 
 | `scripts/npca_accel.py` | Joint fits per curve, growth paths by round, bootstrap → `data/npca_accel.json`; `--only key1,key2` refits some and merges | ~21 min full |
 | `scripts/curve_fits.py` | Dashboard curves (θ + implied capability per score), leave-one-out leverage, implied shift → `data/curve_fits.json`, `data/curve_leverage.json`; `--only`, `--no-leverage`, `--shift-only` | ~6 min full |
 | `scripts/*_figure.py`, `scripts/make_figure.py` | Static PNGs in `figures/` | seconds |
-| `scripts/build_page.py`, `scripts/npca_build_page.py` | Embed JSON (+ solver) into the templates → `index.html`, `npca.html` | seconds |
+| `scripts/resid_null.py` | Parametric bootstrap for the dashboard's residual tab: binomial scores from Epoch's fit, refit, band + misfit p per benchmark → `data/resid_null.json`. Run with `OMP_NUM_THREADS=1` (multiprocessing + threaded BLAS oversubscribes) | ~6 min (4 cores) |
+| `scripts/build_page.py`, `scripts/npca_build_page.py` | Embed JSON (+ solver; `index.html` also embeds `data/resid_null.json`) into the templates → `index.html`, `npca.html` | seconds |
 
 Gotchas:
 - macOS numpy/Accelerate prints spurious matmul warnings; harmless.
