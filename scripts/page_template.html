@@ -292,7 +292,8 @@ function derive(){
  D.growth=growth(D.eci);
  const who=lab?lab+"'s":'',n=F.length,non=B.filter(d=>d.on).length;
  const cn=curveName(),alt=refit||curve!=='eci';
- document.getElementById('lede').textContent='Coloured lines are the benchmark scores of the '+n+(lab?' '+lab:'')+' models that set a new '+(lab?lab+' best':'frontier')+' from GPT-4 onward (named along the top), '+(scale==='implied'?'each shown as the capability its score implies through that benchmark\u2019s own fitted curve, on the same axis as the frontier':'in log-odds (right axis)')+'. Colour shows each benchmark\u2019s area; tap an area to isolate it. The thick line is '+(lab?who+' ':'the ')+'frontier '+(curve==='eci'?'ECI':'capability with each benchmark on a '+cn+' curve')+' (left axis), joining successive records'+(alt?'':', with its 90% interval')+'; the figure under each year is how many points it rose that year. The scale is pinned at two points, Claude 3.5 Sonnet \u2261 130 and GPT-5 \u2261 150, under every curve.'+(lab?' The dashed grey line is the overall frontier across all labs.':'')+(refit?' ECI here is refitted on '+non+' of the '+B.length+' benchmarks (chosen below the chart); dotted faded lines are benchmarks left out of the fit.':'')+(alt?' The dashed grey line is Epoch\u2019s published ECI frontier.':'')+' Hollow points are scores at or past their curve\u2019s floor or ceiling, pinned 1% inside it.';
+ document.getElementById('lede').textContent='Coloured lines are the benchmark scores of the '+n+(lab?' '+lab:'')+' models that set a new '+(lab?lab+' best':'frontier')+' from GPT-4 onward (named along the top), '+(scale==='implied'?'each shown as the capability its score implies through that benchmark\u2019s own fitted curve, on the same axis as the frontier':'in log-odds (right axis)')+'. Colour shows each benchmark\u2019s area; tap an area to isolate it. The thick line is '+(lab?who+' ':'the ')+'frontier '+(curve==='eci'?'ECI':'capability with each benchmark on a '+cn+' curve')+' (left axis), joining successive records'+(alt?'':', with its 90% interval')+'; the figure under each year is how many points it rose that year. The scale is pinned at two points, Claude 3.5 Sonnet \u2261 130 and GPT-5 \u2261 150, under every curve.'+(lab?' The dashed grey line is the overall frontier across all labs.':'')+(refit?' ECI here is refitted on '+non+' of the '+B.length+' benchmarks (chosen below the chart); dotted faded lines are benchmarks left out of the fit.':'')+(alt?' The dashed grey line is Epoch\u2019s published ECI frontier.':'')+' Hollow points are scores at or past their curve\u2019s floor or ceiling, pinned 1% inside it.'+(hm&&F.some(o=>o.m===hm)?' Highlighted: the '+B.filter(d=>hmHas(d)).length+' benchmarks '+hm+' has a score on, with its own scores enlarged; click its name again to clear.':' Click a model\u2019s name along the top to highlight the benchmarks it has scores on.');
+ if(hm&&!F.some(o=>o.m===hm))hm='';
  document.getElementById('count').textContent='The '+n+' record-setting models contribute '+nf.toLocaleString()+' of the '+nall.toLocaleString()+' '+(lab?lab+' ':'')+'scores shown, on '+nb+' of the '+non+' benchmarks'+(refit?' in the refit':'')+'.';
  document.getElementById('slope').textContent=slope.toFixed(3);
  [...sel.options].forEach(o=>{const d=B.find(x=>x.name===o.value);if(d)o.textContent=d.name+(d.rel?' ('+d.rel.slice(0,4)+')':'')+(!d.on?' – not in fit':d.fr.length?'':' – no record-setting-model scores')});
@@ -354,12 +355,13 @@ function changed(fromHash){
   if(lastGood){const keep=B.map(d=>d.on);B.forEach((d,i)=>d.on=lastGood[i]);try{runFit()}catch(_){setPublished()}B.forEach((d,i)=>d.on=keep[i])}else setPublished()}
  derive();build();if(!fromHash)saveHash();
 }
-function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):''].filter(Boolean).join('&');
+function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',hm&&tab==='frontier'?'m='+encodeURIComponent(hm):'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):''].filter(Boolean).join('&');
  try{history.replaceState(null,'',h?'#'+h:location.pathname+location.search)}catch(e){}}
 function readHash(){
  const g=k=>decodeURIComponent((location.hash.match(new RegExp(k+'=([^&]*)'))||[])[1]||'');
  const l=g('lab');lab=RAW.labs.includes(l)?l:'';ls.value=lab;
  curve=CURVES[g('curve')]?g('curve'):'eci';cs.value=curve;scale=g('scale')==='implied'?'implied':'logodds';
+ hm=M.some(o=>o.m===g('m'))?g('m'):'';
  FROM=[...fs_.options].some(o=>o.value===g('from'))?g('from'):RAW.start;fs_.value=FROM;syncButtons();
  tab=g('tab')==='resid'?'resid':g('tab')==='fit'?'fit':g('tab')==='fail'?'fail':'frontier';{const v=g('x').split('_');xc={...XDEF};if(v.length===XK.length)XK.forEach((k,j)=>{const o=document.getElementById('x'+k);if([...o.options].some(q=>q.value===v[j]))xc[k]=v[j]});XK.forEach(k=>document.getElementById('x'+k).value=xc[k])}rY=g('ry')==='linear'?'linear':'logodds';rShow=g('rshow')==='resid'?'resid':'scores';rX=g('rx')==='own'?'own':'shared';{const v=g('rsort'),o=document.getElementById('rsort');if([...o.options].some(x=>x.value===v)){rSort=v;o.value=v}}syncTabs();
  const off=new Set(g('drop').split('.').filter(Boolean).map(Number));B.forEach(d=>d.on=!off.has(d.k));
@@ -367,6 +369,8 @@ function readHash(){
 }
 
 let view='frontier',ax='aligned',hl='',labels=innerWidth>=640;
+// hm: a record-setting model picked by clicking its name; only the benchmarks it has a score on stay highlighted
+let hm='';const hmIdx=()=>hm?M.findIndex(o=>o.m===hm):-1,hmHas=d=>{const i=hmIdx();return i<0||d.p.some(q=>q[0]===i)};
 function short(n){return n.replace('FrontierMath-Tiers-1-3-v2-Private','FrontierMath T1–3 v2').replace('FrontierMath-Tier-4-v2-Private','FrontierMath T4 v2')
  .replace('FrontierMath-2025-02-28-Private','FrontierMath T1–3 (v1)').replace('FrontierMath-Tier-4-2025-07-01-Private','FrontierMath T4 (v1)').replace('OTIS Mock AIME 2024-2025','OTIS Mock AIME')}
 const DAY=864e5,GUTTER='2026-06-01',GX='2026-11-25';
@@ -385,9 +389,9 @@ function modelAnns(){
  it.forEach((o,k)=>{o.lx=o.px;if(k&&o.lx<it[k-1].lx+g)o.lx=it[k-1].lx+g});
  for(let k=it.length-1;k>=0;k--){const cap=k===it.length-1?W-4:it[k+1].lx-g;if(it[k].lx>cap)it[k].lx=cap}
  const mut=css('--muted'),ink=css('--ink');
- return {anns:it.map(o=>({x:o.d,y:1,xref:'x',yref:'paper',ax:o.lx-o.px,ay:-16-textW(o.m+' ('+o.e.toFixed(1)+')',narrow?9:10.5)/2,axref:'pixel',ayref:'pixel',text:o.m+' ('+o.e.toFixed(1)+')',textangle:-90,
-   xanchor:'center',yanchor:'middle',showarrow:true,arrowhead:0,arrowwidth:0.7,arrowcolor:mut,standoff:0,font:{size:narrow?9:10.5,color:ink},
-   hovertext:o.m+': ECI '+o.e.toFixed(1),captureevents:false})),
+ return {anns:it.map(o=>({x:o.d,y:1,xref:'x',yref:'paper',ax:o.lx-o.px,ay:-16-textW(o.m+' ('+o.e.toFixed(1)+')',narrow?9:10.5)/2,axref:'pixel',ayref:'pixel',text:(o.m===hm?'<b>':'')+o.m.replace(/</g,'&lt;')+' ('+o.e.toFixed(1)+')'+(o.m===hm?'</b>':''),name:o.m,textangle:-90,
+   xanchor:'center',yanchor:'middle',showarrow:true,arrowhead:0,arrowwidth:0.7,arrowcolor:mut,standoff:0,font:{size:narrow?9:10.5,color:o.m===hm?css('--accent'):ink},
+   hovertext:o.m+': ECI '+o.e.toFixed(1)+(o.m===hm?' (click to clear)':' (click to highlight the benchmarks it has scores on)'),captureevents:true})),
   lines:it.map(o=>({type:'line',xref:'x',yref:'paper',x0:o.d,x1:o.d,y0:0,y1:1,line:{color:ink,width:0.8,dash:'dot'},layer:'below',opacity:.32}))};
 }
 function growthAnns(){
@@ -401,7 +405,7 @@ function labelAnns(){
  const H=Math.max(200,el.clientHeight-(innerWidth<640?235:245)),W=Math.max(200,el.clientWidth-(narrow?80:124));
  const x0=+new Date(X0()),x1=+new Date(X1());const msPx=(x1-x0)/W,[Y0,Y1]=[YR[0]+0.01*(YR[1]-YR[0]),YR[1]-0.01*(YR[1]-YR[0])],lPx=(YR[1]-YR[0])/H;
  const fs=10,g=(fs+2.5)*lPx,charPx=fs*0.62;
- const items=B.filter(d=>d.fr.length&&d.fr[d.fr.length-1][0]>=X0()&&(d.on||hl===d.name)&&(!hl||hl===d.name)&&(!ha||ha===d.area)).map(d=>{const e=d.fr[d.fr.length-1];return{d,ex:e[0],ey:Math.min(Y1,Math.max(Y0,yv(e))),txt:short(d.name)}});
+ const items=B.filter(d=>d.fr.length&&d.fr[d.fr.length-1][0]>=X0()&&(d.on||hl===d.name)&&(!hl||hl===d.name)&&(!ha||ha===d.area)&&hmHas(d)).map(d=>{const e=d.fr[d.fr.length-1];return{d,ex:e[0],ey:Math.min(Y1,Math.max(Y0,yv(e))),txt:short(d.name)}});
  const gut=items.filter(i=>i.ex>=GUTTER).sort((a,b)=>a.ey-b.ey);
  // 1D spread in the right gutter, kept inside the axis range
  gut.forEach((it,k)=>{it.ly=it.ey;if(k&&it.ly<gut[k-1].ly+g)it.ly=gut[k-1].ly+g});
@@ -427,13 +431,13 @@ function build(){
  if(tab==='fail'){buildFail();return}
  const tr=[];
  B.forEach(d=>{
-  const on=(!hl||hl===d.name)&&(!ha||ha===d.area), op=on?(d.on||hl===d.name?1:0.22):0.07, big=hl===d.name;
+  const on=(!hl||hl===d.name)&&(!ha||ha===d.area)&&hmHas(d), op=on?(d.on||hl===d.name?1:0.22):0.07, big=hl===d.name;
   const ht='<b>%{customdata[0]}</b><br>'+esc(d.name)+(d.on?'':' (not in fit)')+'<br>%{customdata[1]}%{customdata[2]}'+(scale==='implied'?' \u2192 implies %{y:.1f}':'')+', %{x|%b %Y}%{customdata[3]}<extra></extra>',ya=scale==='implied'?'y2':'y';
   if(view==='all'&&d.all.length) tr.push({x:d.all.map(p=>p[0]),y:d.all.map(yv),yaxis:ya,customdata:d.all.map(p=>[p[3],(p[2]*100).toFixed(1)+'%',pin(p)?' (pinned at the curve\u2019s '+(pin(p)<0?'floor':'ceiling')+')':'',p[7]]),
    type:'scatter',mode:'markers',name:d.name,showlegend:false,marker:{color:d.col,size:4,opacity:0.3*op},hovertemplate:ht});
   if(d.fr.length) tr.push({x:d.fr.map(p=>p[0]),y:d.fr.map(yv),yaxis:ya,customdata:d.fr.map(p=>[p[3],(p[2]*100).toFixed(1)+'%',pin(p)?' (pinned at the curve\u2019s '+(pin(p)<0?'floor':'ceiling')+')':'',p[7]]),
    type:'scatter',mode:'lines+markers',name:d.name,showlegend:false,opacity:op,
-   line:{color:d.col,width:big?3.2:d.on?1.9:1.4,dash:d.on?'solid':'dot'},marker:{color:d.col,size:big?7.5:5.5,symbol:d.fr.map(p=>pin(p)?'circle-open':'circle'),line:{color:d.fr.map(p=>pin(p)?d.col:css('--bg')),width:d.fr.map(p=>pin(p)?1.6:1)}},hovertemplate:ht});
+   line:{color:d.col,width:big?3.2:d.on?1.9:1.4,dash:d.on?'solid':'dot'},marker:{color:d.col,size:hm?d.fr.map(p=>p[3]===hm?11:big?7.5:5.5):big?7.5:5.5,symbol:d.fr.map(p=>pin(p)?'circle-open':'circle'),line:{color:d.fr.map(p=>pin(p)?d.col:css('--bg')),width:d.fr.map(p=>pin(p)?1.6:1)}},hovertemplate:ht});
  });
  const E=D.eci,eciC=css('--eci'),band=css('--band');
  // 90% band between successive records (published fit only; refits have no intervals)
@@ -592,11 +596,12 @@ document.querySelectorAll('[data-ax]').forEach(b=>b.onclick=()=>{ax=b.dataset.ax
 document.querySelectorAll('[data-lab]').forEach(b=>{b.setAttribute('aria-pressed',(b.dataset.lab==='on')===labels);b.onclick=()=>{labels=b.dataset.lab==='on';document.querySelectorAll('[data-lab]').forEach(x=>x.setAttribute('aria-pressed',x===b));build()}});
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(build,200)});
 sel.onchange=()=>{hl=sel.value;build()};
-ls.onchange=()=>{lab=ls.value;derive();build();saveHash()};
+ls.onchange=()=>{lab=ls.value;hm='';derive();build();saveHash()};
 addEventListener('hashchange',()=>{readHash();changed(true)});
 readHash();changed(true);
 if(document.fonts)document.fonts.ready.then(build);
 function hookClick(){const el=document.getElementById('plot');if(el._clk||!el.on)return;el._clk=1;
+el.on('plotly_clickannotation',e=>{const n=e.annotation&&e.annotation.name;if(!n||!D.eci.some(x=>x[1]===n))return;hm=hm===n?'':n;derive();build();saveHash()});
 el.on('plotly_click',e=>{const n=e.points[0].data.name;if(!n||n==='Frontier ECI'||n==='Overall frontier'||n==='Published frontier'||n.startsWith('trace'))return;hl=(hl===n)?'':n;sel.value=hl;build()});}
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',build);
 }catch(err){console.error(err);showFallback()}
