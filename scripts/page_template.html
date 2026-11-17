@@ -44,7 +44,7 @@ details.fit summary b{font-weight:600}
 .fitgrid input{accent-color:var(--accent)}
 #fitmsg{font-size:13px;color:var(--muted);margin:6px 0 2px}
 #fitmsg.err{color:#c0392b}
-nav.tabs{display:flex;gap:0;margin:2px 0 14px;border-bottom:1px solid var(--line)}
+nav.tabs{display:flex;flex-wrap:wrap;gap:0;margin:2px 0 14px;border-bottom:1px solid var(--line)}
 nav.tabs button{font:inherit;font-size:15px;padding:8px 14px;border:0;border-bottom:3px solid transparent;background:none;color:var(--muted);cursor:pointer;margin-bottom:-1px}
 nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
 nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
@@ -72,6 +72,28 @@ table.xt tr.cur td{background:var(--band);font-weight:600}
 table.xt tr[data-x]{cursor:pointer}
 table.xt .sw{display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle}
 table.xt button{font:inherit;font-size:12px;border:0;background:none;color:var(--muted);cursor:pointer;padding:0 4px}
+#wnav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+#wnav button{font:inherit;font-size:13.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+#wnav button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+#wbody{max-width:1000px}
+#wbody h2{font:500 1.45rem/1.2 "Newsreader",Georgia,serif;margin:0 0 6px}
+#wbody h3{font-size:14px;font-weight:600;margin:18px 0 8px}
+#wbody h4{font-size:14px;font-weight:600;margin:0 0 4px}
+#wbody p{margin:0 0 8px;max-width:82ch}
+.wwhat{font-size:15px}
+.wsmall,.wsrc{font-size:13px;color:var(--muted)}
+.wsrc a{overflow-wrap:anywhere}
+.wavail{font-size:13.5px;border-left:3px solid var(--line);padding-left:10px;color:var(--muted)}
+.wscores{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:4px 28px}
+.wscores h3{margin-top:8px}
+.wbar{display:grid;grid-template-columns:minmax(110px,40%) 1fr 40px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
+.wbar .wt{height:10px;background:var(--grid);border-radius:3px;overflow:hidden}
+.wbar .wt i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.wbar .wv{text-align:right;font-variant-numeric:tabular-nums}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px}
+.wcard{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:10px 12px;font-size:14px}
+.wcard.wex{margin:0 0 10px}
+.wcard blockquote{margin:6px 0 8px;padding:2px 0 2px 10px;border-left:3px solid var(--accent);font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere}
 p.src{font-size:14px;color:var(--muted);margin:0 0 12px}
 a{color:var(--accent)}
 .notes{color:var(--muted);font-size:13.5px;max-width:82ch;margin-top:10px}
@@ -84,6 +106,7 @@ a{color:var(--accent)}
  <button role="tab" data-tab="frontier" aria-selected="true">Frontier over time</button>
  <button role="tab" data-tab="resid" aria-selected="false">Fit by benchmark (residuals)</button>
  <button role="tab" data-tab="fit" aria-selected="false">Try other fitting choices</button>
+ <button role="tab" data-tab="fail" aria-selected="false">What frontier models still fail at</button>
 </nav>
 <div id="ftab">
 <div class="controls">
@@ -167,6 +190,12 @@ a{color:var(--accent)}
 </div>
 <div class="notes" id="xnotes"></div>
 </div>
+<div id="wtab" hidden>
+<p class="lede" style="margin-top:0">Why don’t the strongest models score 100%? Choose a benchmark that is not yet saturated to see what it asks, how the strongest models score, sample tasks, and the kinds of mistakes its authors and others have documented.</p>
+<div id="wnav" role="group" aria-label="Benchmark"></div>
+<div id="wbody"></div>
+<div class="notes" id="wnotes"></div>
+</div>
 <p class="lede" id="lede"></p>
 <details class="fit" id="fitbox"><summary><b>Benchmarks in the ECI fit:</b> <span id="fitstat"></span></summary>
  <p id="fitmsg"></p>
@@ -186,7 +215,7 @@ function showFallback(){document.getElementById('plot').hidden=true;document.que
 /*FLEX*/
 if(typeof Plotly==='undefined'){showFallback()}
 else try{
-const RAW=/*DATA*/,CF=/*CURVES*/,RN=/*RNULL*/;
+const RAW=/*DATA*/,CF=/*CURVES*/,RN=/*RNULL*/,FAILS=/*FAILS*/;
 const sel=document.getElementById('hl'),FIT=RAW.fit,EPS=0.01;
 const lg01=p=>{p=Math.min(Math.max(p,EPS),1-EPS);return Math.log(p/(1-p))};
 const D={areas:RAW.areas,cols:RAW.cols},B=RAW.b.map((b,k)=>({k,name:b.name,rel:b.rel,area:b.area,p:b.p.map((q,j)=>[q[0],lg01(q[1]),q[1],j]),on:true,fr:[],all:[]}));
@@ -303,14 +332,14 @@ function changed(fromHash){
   if(lastGood){const keep=B.map(d=>d.on);B.forEach((d,i)=>d.on=lastGood[i]);try{runFit()}catch(_){setPublished()}B.forEach((d,i)=>d.on=keep[i])}else setPublished()}
  derive();build();if(!fromHash)saveHash();
 }
-function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):''].filter(Boolean).join('&');
+function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):'',tab==='fail'&&wSel?'w='+wSel:''].filter(Boolean).join('&');
  try{history.replaceState(null,'',h?'#'+h:location.pathname+location.search)}catch(e){}}
 function readHash(){
  const g=k=>decodeURIComponent((location.hash.match(new RegExp(k+'=([^&]*)'))||[])[1]||'');
  const l=g('lab');lab=RAW.labs.includes(l)?l:'';ls.value=lab;
  curve=CURVES[g('curve')]?g('curve'):'eci';cs.value=curve;scale=g('scale')==='implied'?'implied':'logodds';
  FROM=[...fs_.options].some(o=>o.value===g('from'))?g('from'):RAW.start;fs_.value=FROM;syncButtons();
- tab=g('tab')==='resid'?'resid':g('tab')==='fit'?'fit':'frontier';{const v=g('x').split('_');xc={...XDEF};if(v.length===XK.length)XK.forEach((k,j)=>{const o=document.getElementById('x'+k);if([...o.options].some(q=>q.value===v[j]))xc[k]=v[j]});XK.forEach(k=>document.getElementById('x'+k).value=xc[k])}rY=g('ry')==='linear'?'linear':'logodds';rShow=g('rshow')==='resid'?'resid':'scores';rX=g('rx')==='own'?'own':'shared';{const v=g('rsort'),o=document.getElementById('rsort');if([...o.options].some(x=>x.value===v)){rSort=v;o.value=v}}syncTabs();
+ tab=g('tab')==='resid'?'resid':g('tab')==='fit'?'fit':g('tab')==='fail'?'fail':'frontier';wSel=g('w');{const v=g('x').split('_');xc={...XDEF};if(v.length===XK.length)XK.forEach((k,j)=>{const o=document.getElementById('x'+k);if([...o.options].some(q=>q.value===v[j]))xc[k]=v[j]});XK.forEach(k=>document.getElementById('x'+k).value=xc[k])}rY=g('ry')==='linear'?'linear':'logodds';rShow=g('rshow')==='resid'?'resid':'scores';rX=g('rx')==='own'?'own':'shared';{const v=g('rsort'),o=document.getElementById('rsort');if([...o.options].some(x=>x.value===v)){rSort=v;o.value=v}}syncTabs();
  const off=new Set(g('drop').split('.').filter(Boolean).map(Number));B.forEach(d=>d.on=!off.has(d.k));
  if(off.size)document.getElementById('fitbox').open=true;
 }
@@ -373,6 +402,7 @@ const esc=s=>s.replace(/%/g,'%%');
 function build(){
  if(tab==='resid'){buildResid();return}
  if(tab==='fit'){buildFit();return}
+ if(tab==='fail'){buildFail();return}
  const tr=[];
  B.forEach(d=>{
   const on=(!hl||hl===d.name)&&(!ha||ha===d.area), op=on?(d.on||hl===d.name?1:0.22):0.07, big=hl===d.name;
@@ -430,7 +460,7 @@ function smooth(xs,ys,lo,hi){const h=Math.max(2.5,(hi-lo)/7),out=[];
  return out}
 function syncTabs(){
  document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
- document.getElementById('ftab').hidden=tab!=='frontier';document.getElementById('fnotes').hidden=tab!=='frontier';document.getElementById('rtab').hidden=tab!=='resid';document.getElementById('xtab').hidden=tab!=='fit';
+ document.getElementById('ftab').hidden=tab!=='frontier';document.getElementById('fnotes').hidden=tab!=='frontier';document.getElementById('rtab').hidden=tab!=='resid';document.getElementById('xtab').hidden=tab!=='fit';document.getElementById('wtab').hidden=tab!=='fail';document.getElementById('fitbox').hidden=tab==='fail';
  [['rshow',rShow],['ry',rY],['rx',rX],['rcol',rCol]].forEach(([k,v])=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.setAttribute('aria-pressed',b.dataset[k]===v)));
 }
 function buildResid(){
@@ -524,6 +554,7 @@ function buildResid(){
   +'<p><b>Units.</b> Epoch fits by least squares in score units, so a miss near 0% or 100% costs its fit little even when it is large in log-odds. The log-odds view, the logit RMSE and the misfit statistic all emphasise the tails, which is where the logistic is most at issue but also where pinning and floor noise are largest. Switch to the linear axis to see the misses as the fit weighs them. The local average uses a Gaussian kernel with bandwidth one-seventh of the benchmark’s ECI range (at least 2.5 points), and is drawn only where about three or more scores lie within a bandwidth. Untick benchmarks under “Benchmarks in the ECI fit” to refit ECI on the rest. The panels then show the refit, without band or p, and panels marked “not in refit” keep their published curve, plotted against the refitted capabilities.</p>';
 }
 /*FITTAB*/
+/*FAILTAB*/
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;syncTabs();changed()});
 [['rshow',v=>rShow=v],['ry',v=>rY=v],['rx',v=>rX=v],['rcol',v=>rCol=v]].forEach(([k,f])=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.onclick=()=>{f(b.dataset[k]);syncTabs();build();saveHash()}));
 const rls=document.getElementById('rlab');RAW.labs.forEach(l=>{const o=document.createElement('option');o.value=o.textContent=l;rls.appendChild(o)});

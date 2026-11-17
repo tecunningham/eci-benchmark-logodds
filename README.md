@@ -2,6 +2,17 @@
 
 **Dashboard: https://tecunningham.github.io/eci-benchmark-logodds/**
 
+The dashboard ([`index.html`](index.html)) has four tabs:
+
+1. **Frontier over time.** Frontier ECI with the benchmark scores behind it, in log-odds.
+2. **Fit by benchmark (residuals).** One panel per benchmark: does it follow a logistic in ECI?
+3. **Try other fitting choices.** Refit capability in your browser under a different link function, loss, clipping rule, penalty or model filter, and compare the frontier and its growth across fits. See [below](#trying-other-fitting-choices-in-the-browser).
+4. **What frontier models still fail at.** For about ten benchmarks that are not yet saturated: what they ask, how the strongest models score, sample tasks, and the failure types documented in public sources (`data/failures.json`).
+
+> **Data update, 17 Nov 2026.** The data are Epoch's `benchmark_data.zip` as retrieved on 17 Nov 2026: 256 models (latest released 9 Nov 2026), 57 benchmarks, 2,879 scores. Since the 1 Oct snapshot Epoch has dropped five benchmarks from ECI (DeepSWE, HLE, Lech Mazur Writing, SWE-Bench verified, ScienceQA), added two (SpireClimb, WeirdML v3), and now drops models with fewer than four scores between 10% and 90%.
+>
+> **Epoch changed how ECI is fitted.** Its [code](https://github.com/epoch-research/eci-public) now defaults to a Bayesian fit: the same logistic curve, but as the mean of a Beta likelihood with a noise level per benchmark, sampled by MCMC. Least squares is kept only as a deprecated option. The published scores match the new fit: a quick best-fit version of it lands within 0.1 points of published ECI for the median model released since 2025, against 0.6 for least squares. So this repo's least-squares reimplementation (`scripts/eci_fit.py`) no longer reproduces published ECI exactly (median gap 0.9 points; several points for the weakest models and up to 1.5 for the strongest).
+
 > **Working on this repo?** Start with [`NEXT_STEPS.md`](NEXT_STEPS.md): current findings, open questions and a map of the code.
 
 ## Key takeaways: is ECI measuring benchmark-score acceleration correctly?
@@ -245,6 +256,31 @@ Winogrande's slope is pinned at 1 to fix the raw scale, and the result is mapped
 - **No intervals for refits.** Epoch's intervals come from 500 bootstrap refits, which the page doesn't run.
 - **Median slope.** The slope-matched axis uses the median slope of the refit.
 
+## Trying other fitting choices in the browser
+
+The third tab refits capability from the same scores with the modelling choices left open ([`scripts/flex_fit.js`](scripts/flex_fit.js), UI in [`scripts/fit_tab.js`](scripts/fit_tab.js)). Every fit has the form `score ≈ G(slope_b × (capability_m − difficulty_b))`, rescaled so Claude 3.5 Sonnet = 130 and GPT-5 = 150.
+
+- **Link `G`:** logistic, probit, cauchit, complementary log-log, log-log.
+- **Loss:** least squares on scores (Epoch's earlier fit); Beta likelihood (Epoch's current model); cross-entropy; least squares on the link scale.
+- **Also:** one slope per benchmark or a common slope; where scores of 0% / 100% are held (0.1%, 1% or 5% from the ends); the L2 penalty; a minimum number of scores per model; and which benchmarks are in (the shared benchmark picker).
+- **Output:** a table of the fits tried (in-sample RMSE, frontier growth in the last 12 months and the 12 before, their ratio, top model, median change from published ECI), the frontier under each fit against Epoch's published one, each model's change from published, and one benchmark's fitted curve.
+- **Solver.** The same Levenberg–Marquardt scheme as `eci_fit.js`, generalised to Fisher scoring so that any link and likelihood fit in. A fit takes 20–200 ms; the Beta likelihood takes about half a second.
+- **The Beta fit is an approximation of Epoch's.** Epoch samples the posterior and publishes posterior means. The page finds the single best-fitting point, alternating between the curve parameters and each benchmark's noise level, with slopes and noise levels shrunk towards their typical value. It lands within 0.26 points of published ECI for the median model since GPT-4 (0.10 for models since 2025).
+- **Intervals are approximate.** The band is a delta-method 90% interval from the curvature of the loss at the best fit, carried through the 130/150 rescaling. It treats scores as independent and noise levels as known. For the top models it is about ±3 points, against Epoch's roughly ±3.5.
+- **Hold-out check.** A button refits five times, each leaving out a random fifth of the scores, and reports the error on them in score points, with the same folds for every fit.
+- **First look** (all 57 benchmarks, growth of the frontier in ECI points over the previous 12 months → the last 12, windows ending 17 Nov 2026):
+
+  | Fit | Previous → last | Top model |
+  |---|---|---|
+  | Epoch's published ECI | 13.6 → 20.5 | Claude Fable 5.2, 173.4 |
+  | Logistic, Beta likelihood | 13.2 → 21.5 | 174.3 |
+  | Logistic, least squares on scores | 13.3 → 21.6 | 174.9 |
+  | Probit, cross-entropy | 13.1 → 19.1 | 172.0 |
+  | Log-log, Beta likelihood | 14.7 → 38.7 | 192.1 |
+
+  The symmetric links and the four losses agree to within a couple of points. The asymmetric links do not: a log-log curve, which approaches 100% slowly, puts the latest models far higher, and a complementary log-log curve puts them lower (166 for the top model under least squares). This is the same sensitivity as in the nonparametric section: above GPT-5's 150, the spacing between models is set by the curve's shape.
+- **Not included:** a fitted floor and ceiling, free-form curves and a second factor, which take minutes and are on the nonparametric page.
+
 ## Rebuild
 
 ```bash
@@ -252,7 +288,7 @@ pip install pandas numpy matplotlib
 cd scripts
 python build_data.py     # data/epoch/*.csv -> data/frontier_all.json, data/eci_data.json
 python make_figure.py    # -> figures/eci_frontier_all.png
-python build_page.py     # page_template.html + eci_data.json + curve_fits.json + eci_fit.js -> ../index.html (run curve_fits.py first)
+python build_page.py     # page_template.html + data (eci_data, curve_fits, resid_null, failures) + eci_fit.js, flex_fit.js, fit_tab.js, fail_tab.js -> ../index.html (run curve_fits.py first)
 ```
 
 The interactive page embeds `eci_data.json` and the solver. That data holds every model and score in Epoch's fit, tagged by lab, plus the raw parameters of our full fit, which each refit starts from. The page computes each lab's frontier in the browser. It uses Plotly from jsDelivr and falls back to the static PNG if that fails to load.

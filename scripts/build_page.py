@@ -5,9 +5,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 page = (ROOT / "scripts" / "page_template.html").read_text()
-key = "/*FITTAB*/"
+for key, src in [("/*FITTAB*/", "fit_tab.js"), ("/*FAILTAB*/", "fail_tab.js")]:   # tab code first: it holds no placeholders
+    assert page.count(key) == 1, key
+    page = page.replace(key, (ROOT / "scripts" / src).read_text())
+fails = ROOT / "data" / "failures.json"   # notes for the fourth tab; "<" escaped so the text cannot close the script tag
+key = "/*FAILS*/"
 assert page.count(key) == 1, key
-page = page.replace(key, (ROOT / "scripts" / "fit_tab.js").read_text())
+page = page.replace(key, fails.read_text().replace("<", "\\u003c") if fails.exists() else "null")
 for key, src in [("/*DATA*/", ROOT / "data" / "eci_data.json"), ("/*CURVES*/", ROOT / "data" / "curve_fits.json"),
                  ("/*RNULL*/", ROOT / "data" / "resid_null.json"),
                  ("/*SOLVER*/", ROOT / "scripts" / "eci_fit.js"), ("/*FLEX*/", ROOT / "scripts" / "flex_fit.js")]:
