@@ -2,6 +2,9 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ECI Explorer</title>
+<meta name="description" content="Explore Epoch AI’s Epoch Capabilities Index: frontier ECI and the benchmark scores behind it, how well each benchmark fits, how ECI changes under other fitting choices, and what frontier models still fail at.">
+<meta property="og:title" content="ECI Explorer">
+<meta property="og:description" content="Frontier ECI and the benchmark scores behind it, benchmark-by-benchmark fit, alternative fitting choices, and what frontier models still fail at.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-strict-dist-min@2.35.2/plotly-strict.min.js"></script>
@@ -108,6 +111,7 @@ tr.wdet blockquote{margin:4px 0 8px;padding:2px 0 2px 10px;border-left:3px solid
 tr.wdet figure{margin:8px 0}tr.wdet figcaption{font-size:12.5px;color:var(--muted)}
 .wbig{max-width:min(100%,720px);border-radius:6px;border:1px solid var(--line)}
 details.wceil{font-size:13px;color:var(--muted);margin:2px 0 4px;max-width:110ch}details.wceil summary{cursor:pointer}details.wceil summary b{color:var(--ink)}details.wceil p{margin:4px 0 0 16px!important}
+.wsat{font:600 11px "Public Sans",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:8px;vertical-align:middle}
 details.wmodes{margin-top:4px}details.wmodes summary{cursor:pointer}
 #wbody ul{margin:4px 0 0;padding-left:18px}#wbody li{margin:3px 0}
 #wbody li a,.wrefs a{font-size:12.5px;overflow-wrap:anywhere}
@@ -603,11 +607,12 @@ let lastGood=null;
 function changed(fromHash){
  B.forEach(d=>boxes[d.k].checked=d.on);
  const non=B.filter(d=>d.on).length;
- fitstat.textContent=curve!=='eci'?'all '+B.length+' ('+CURVES[curve].label+')':non===B.length?'all '+B.length+' (published ECI)':non+' of '+B.length+' (refitted)';
+ fitstat.textContent=tab==='fit'?(non===B.length?'all '+B.length:non+' of '+B.length)+' (used by the fit above)':curve!=='eci'?'all '+B.length+' ('+CURVES[curve].label+')':non===B.length?'all '+B.length+' (published ECI)':non+' of '+B.length+' (refitted)';
  boxes.forEach(c=>c.disabled=curve!=='eci'&&tab!=='fit');document.querySelectorAll('[data-fit]').forEach(b=>b.disabled=curve!=='eci'&&tab!=='fit');
  try{fitmsg.innerHTML=runFit();fitmsg.className='';lastGood=B.map(d=>d.on)}
  catch(e){fitmsg.textContent='Can’t refit: '+e.message+' Showing the last valid fit.';fitmsg.className='err';
   if(lastGood){const keep=B.map(d=>d.on);B.forEach((d,i)=>d.on=lastGood[i]);try{runFit()}catch(_){setPublished()}B.forEach((d,i)=>d.on=keep[i])}else setPublished()}
+ if(tab==='fit'){fitmsg.className='';fitmsg.textContent='Untick benchmarks to leave them out of the fit above.'}
  derive();build();if(!fromHash)saveHash();
 }
 function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',hm&&tab==='frontier'?'m='+encodeURIComponent(hm):'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):''].filter(Boolean).join('&');
@@ -720,7 +725,7 @@ function build(){
  YR=scale==='implied'?r2:[-5,5];
  const ancShapes=ANC.map(a=>({type:'line',xref:'paper',yref:'y2',x0:0,x1:1,y0:a.v,y1:a.v,line:{color:css('--eci'),width:1.2,dash:'dot'},opacity:.75,layer:'below'}));
  const ancAnns=ANC.filter(a=>a.v>r2[0]&&a.v<r2[1]).map(a=>({xref:'paper',x:0.005,yref:'y2',y:a.v,xanchor:'left',yanchor:'bottom',showarrow:false,text:'<b>'+a.m+' \u2261 '+a.v+'</b> (fixed)',font:{size:11,color:css('--eci')},bgcolor:css('--labelbg')}));
- if(D.canon&&D.canon.length){const c=D.canon[D.canon.length-1];ancAnns.push({x:c[0],y:c[2],xref:'x',yref:'y2',xanchor:'left',yanchor:'top',xshift:6,showarrow:false,text:'Epoch\u2019s published ECI',font:{size:11,color:mut},bgcolor:css('--labelbg')})}
+ if(D.canon&&D.canon.length){const c=D.canon[D.canon.length-1];ancAnns.push({x:c[0],y:c[2],xref:'x',yref:'y2',xanchor:'right',yanchor:'top',xshift:-8,yshift:-4,showarrow:false,text:'Epoch\u2019s published ECI',font:{size:11,color:mut},bgcolor:css('--labelbg')})}
  const layout={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Public Sans, system-ui, sans-serif',color:ink,size:12},
   margin:{l:narrow?42:62,r:narrow?38:62,t:narrow?175:185,b:62},hovermode:'closest',dragmode:narrow?false:'zoom',
   xaxis:{type:'date',showgrid:false,zeroline:false,dtick:'M12',tick0:'2023-01-01',tickformat:'%Y',ticklabelmode:'period',ticks:'',range:[X0(),X1()],tickfont:{color:mut}},annotations:(labels?labelAnns():[]).concat(MA.anns,growthAnns(),ancAnns),shapes:ancShapes.concat(['2024','2025','2026','2027'].map(y=>({type:'line',xref:'x',yref:'paper',x0:y+'-01-01',x1:y+'-01-01',y0:0,y1:1,line:{color:mut,width:1.4},opacity:.55,layer:'below'})).concat(MA.lines)),
@@ -891,7 +896,7 @@ function drawFit(){
  // comparison table
  const PF=frontier(M.filter(o=>o.shown).map(o=>({d:o.d,m:o.m,e:o.pub}))),pg=xGrowth(PF),f1=v=>Number.isFinite(v)?v.toFixed(1):'–',top=F=>F.length?F[F.length-1]:null;
  const row=(sw,name,rm,cv,g,tp,med,attr,x)=>'<tr'+attr+'><td>'+sw+'</td><td>'+name+'</td><td>'+rm+'</td><td>'+cv+'</td><td>'+f1(g.prev)+'</td><td>'+f1(g.last)+'</td><td>'+(Number.isFinite(g.ratio)?g.ratio.toFixed(2)+'×':'–')+'</td><td>'+(tp?tp.m.replace(/</g,'&lt;')+' '+tp.e.toFixed(1):'–')+'</td><td>'+med+'</td><td>'+x+'</td></tr>';
- document.getElementById('xtable').innerHTML='<thead><tr><th></th><th>Fit</th><th>In-sample RMSE<br>(score points)</th><th>Hold-out RMSE<br>(score points)</th><th>Frontier growth,<br>previous 12 months</th><th>Frontier growth,<br>last 12 months</th><th>Last ÷<br>previous</th><th>Top model</th><th>Median |change|<br>from published</th><th></th></tr></thead><tbody>'
+ document.getElementById('xtable').innerHTML='<thead><tr><th></th><th>Fit</th><th>In-sample RMSE<br>(score points)</th><th>Hold-out RMSE<br>(score points)</th><th>Frontier growth,<br>previous 12 months<br>(ECI points)</th><th>Frontier growth,<br>last 12 months<br>(ECI points)</th><th>Last ÷<br>previous</th><th>Top model</th><th>Median |change|<br>from published</th><th></th></tr></thead><tbody>'
   +row('<span class="sw" style="border-color:'+mut+';border-top-style:dashed"></span>','Epoch’s published ECI (Bayesian fit, posterior means)','–','–',pg,top(PF),'–','','')
   +XH.slice().reverse().map(x=>row('<span class="sw" style="border-color:'+x.col+'"></span>',xLabel(x),(x.r.rmse*100).toFixed(2),x.cv?(x.cv.rmse*100).toFixed(2):'–',x.g,top(x.F),x.med.toFixed(2),' data-x="'+x.id+'"'+(x===h?' class="cur"':''),'<button type="button" data-xrm="'+x.id+'" aria-label="Remove this fit">✕</button>')).join('')+'</tbody>';
  document.querySelectorAll('#xtable tr[data-x]').forEach(tr=>tr.onclick=e=>{const x=XH.find(v=>v.id===+tr.dataset.x);if(!x)return;
@@ -916,7 +921,9 @@ function drawFit(){
  const ms=M.map((o,i)=>i).filter(i=>M[i].shown&&Number.isFinite(h.r.eci[i]));
  Plotly.react('xdiff',[{x:ms.map(i=>M[i].pub),y:ms.map(i=>h.r.eci[i]-M[i].pub),customdata:ms.map(i=>[M[i].m,M[i].d,h.r.eci[i].toFixed(1)]),type:'scatter',mode:'markers',marker:{size:6,color:h.col,opacity:.7,line:{color:bg,width:.5}},
    hovertemplate:'<b>%{customdata[0]}</b> (%{customdata[1]})<br>published %{x:.1f} → this fit %{customdata[2]} (%{y:+.1f})<extra></extra>'}],
-  lay('This fit − published','Epoch’s published ECI',{shapes:[{type:'line',xref:'paper',yref:'y',x0:0,x1:1,y0:0,y1:0,line:{color:ink,width:1.2}}]}),cfgP);
+  (()=>{const near=ms.filter(i=>M[i].pub>=120),ys=near.map(i=>h.r.eci[i]-M[i].pub),lo=Math.min(0,...ys),hi=Math.max(0,...ys),pad=Math.max(0.5,(hi-lo)*0.08);
+   return lay('This fit − published','Epoch’s published ECI',{xaxis:{range:[118,Math.max(...ms.map(i=>M[i].pub))+3],gridcolor:grid,zeroline:false,tickfont:{color:mut},title:{text:'Epoch’s published ECI (models below 120 are off the left edge; double-click to see all)',font:{color:mut,size:12}}},
+    yaxis:{range:[lo-pad,hi+pad],gridcolor:grid,zeroline:false,tickfont:{color:mut},title:narrow?undefined:{text:'This fit − published',font:{color:mut,size:12}}},shapes:[{type:'line',xref:'paper',yref:'y',x0:0,x1:1,y0:0,y1:0,line:{color:ink,width:1.2}}]})})(),cfgP);
  // one benchmark: scores against capability under this fit, with its fitted curve
  const bs=document.getElementById('xbench');
  if(!bs.options.length){[...B].sort((a,b)=>a.name.localeCompare(b.name)).forEach(d=>{const o=document.createElement('option');o.value=d.k;o.textContent=d.name;bs.appendChild(o)});
@@ -927,7 +934,7 @@ function drawFit(){
  if(inFit)ct.push({x:gx,y:gx.map(x=>h.r.curve(d.k,x)),type:'scatter',mode:'lines',line:{color:h.col,width:2.6},hovertemplate:'This fit’s curve: %{y:.0%} at %{x:.0f}<extra></extra>'});
  ct.push({x:xs,y:pts.map(q=>q[2]),customdata:pts.map(q=>[M[q[0]].m,M[q[0]].d]),type:'scatter',mode:'markers',marker:{size:6,color:d.col,opacity:.75,line:{color:bg,width:.5}},hovertemplate:'<b>%{customdata[0]}</b> (%{customdata[1]})<br>'+esc(d.name)+' %{y:.1%} at capability %{x:.1f}<extra></extra>'});
  Plotly.react('xcurve',ct,lay('Score','Capability under this fit'+(inFit?'':' (benchmark not in this fit)'),{yaxis:{range:[-0.04,1.04],tickformat:'.0%',gridcolor:grid,zeroline:false,tickfont:{color:mut},title:narrow?undefined:{text:'Score',font:{color:mut,size:12}}}}),cfgP);
- document.getElementById('xintro').textContent='How much does ECI depend on how it is fitted? Choose a link function, a loss and a few other settings above, and capability is re-estimated in your browser from the same '+rows.length.toLocaleString()+' scores, on the same scale (Claude 3.5 Sonnet ≡ 130, GPT-5 ≡ 150). Each fit you try is added to the table and drawn on the chart, against Epoch’s published frontier (dashed). Click a row to return to that fit. Benchmarks can be dropped under “Benchmarks in the ECI fit” below.';
+ document.getElementById('xintro').textContent='How much does ECI depend on how it is fitted? Choose a link function, a loss and a few other settings below, and capability is re-estimated in your browser from the same '+rows.length.toLocaleString()+' scores, on the same scale (Claude 3.5 Sonnet ≡ 130, GPT-5 ≡ 150). Each fit you try is added to the table and drawn on the chart, against Epoch’s published frontier (dashed). Click a row to return to that fit. Benchmarks can be dropped under “Benchmarks in the ECI fit” below.';
  document.getElementById('xnotes').innerHTML='<p><b>The model.</b> Every fit has the same form: a benchmark’s expected score is G(slope × (capability − difficulty)), with one capability per model and one difficulty per benchmark. The choices change G, what counts as a miss, and which scores go in. After fitting, capability is rescaled so Claude 3.5 Sonnet = 130 and GPT-5 = 150, which makes fits comparable below, between and near those two models; far above 150 the spacing depends on the curve’s shape, so that is where the choices matter most.</p>'
   +'<p><b>Link.</b> The logistic and probit are symmetric and differ little. The cauchit has heavy tails: scores approach 0% and 100% slowly, so extreme scores say less about capability. The two log-log links are asymmetric. With the complementary log-log, scores creep up from 0% and then close on 100% quickly; with the log-log they leave 0% quickly and approach 100% slowly, so a model needs much more capability to move from 90% to 99%.</p>'
   +'<p><b>Loss.</b> <i>Least squares on scores</i> is Epoch’s earlier method: every miss costs its square in score units, so a miss near 0% or 100% is cheap. <i>Beta likelihood</i> is Epoch’s current model: scores are Beta-distributed around the curve, with a noise level per benchmark that shrinks towards 0% and 100%, so misses near the ends cost more. Epoch samples the full posterior by MCMC and publishes posterior means; this page finds the single best-fitting point instead (alternating between the curve parameters and each benchmark’s noise level, with slopes and noise levels shrunk towards their typical value), which takes under a second and lands within about '+(XH.find(x=>x.cfg.loss==='beta'&&x.cfg.link==='logit'&&XK.every(k=>k==='loss'||x.cfg[k]===XDEF[k])&&!x.off.length)?.med.toFixed(1)??'0.3')+' points of the published ECI for the median model since GPT-4. <i>Cross-entropy</i> treats each score as a share of right answers, also weighting the ends more. <i>Least squares on the link scale</i> transforms each score through the inverse link (log-odds for the logistic) and fits a straight line there, so everything turns on how scores of 0% and 100% are held back from infinity.</p>'
@@ -952,7 +959,7 @@ const wImg=(im,cls)=>{if(!im||!/^figures\/failures\/[\w.-]+$/.test(im.file||''))
 // best score of any model on a benchmark, as Epoch normalises scores for ECI
 const wMax=n=>{const d=B.find(x=>x.name===n);if(!d||!d.p.length)return null;const q=d.p.reduce((a,c)=>c[2]>a[2]?c:a);return{s:q[2],m:M[q[0]].m}};
 const wMaxTxt=b=>{const v=(b.eci_names||[]).map(n=>({n,x:wMax(n)})).filter(o=>o.x);if(!v.length)return'';
- const df=wDiff(b);return' ('+(Number.isFinite(df)?'difficulty '+df.toFixed(0)+', ':'')+'max '+v.map(o=>(o.x.s*100).toFixed(0)+'%'+(v.length>1?' '+short(o.n).replace('FrontierMath ',''):'')).join(', ')+')'};
+ return' (max '+v.map(o=>(o.x.s*100).toFixed(0)+'%'+(v.length>1?' '+short(o.n).replace('FrontierMath ',''):'')).join(', ')+')'};
 // a chess position drawn from its FEN (first field), with Unicode pieces
 const WP={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
 function wBoard(fen){const f=(fen||'').trim().split(/\s+/),rk=(f[0]||'').split('/');if(rk.length!==8)return null;
@@ -961,6 +968,8 @@ function wBoard(fen){const f=(fen||'').trim().split(/\s+/),rk=(f[0]||'').split('
  const w=wEl('div');w.append(g,wEl('span','wsub',(f[1]==='b'?'Black':'White')+' to move'));return w}
 // Epoch's fitted difficulty of a benchmark on the ECI scale (the hardest of its subsets)
 const wDiff=b=>Math.max(...(b.eci_names||[]).map(n=>{const d=B.find(x=>x.name===n);return d?CF.published.edi[d.k]:-Infinity}));
+// headroom: the best score any model has on the benchmark (its least-saturated subset)
+const wBest=b=>Math.min(...(b.eci_names||[]).map(n=>{const x=wMax(n);return x?x.s:1}));
 const wOpen=new Set();
 // first sentence (or clause) of a long cell; the click-through shows the rest
 const wFirst=(t,re)=>{t=t||'';const m=t.match(re||/^.*?[.!?](?=\s|$)/);return m&&m[0].length<t.length?m[0]:t};
@@ -970,8 +979,8 @@ function buildFail(){
  const cell=(label,...kids)=>{const td=wEl('td');td.dataset.l=label;td.append(...kids.filter(Boolean));return td};
  const card=b=>{
   const c=wEl('section','wb');c.id='w-'+b.id;
-  const h=wEl('h2',null,b.title);h.append(wEl('span','wmax',wMaxTxt(b)));
-  h.title=(b.eci_names||[]).map(n=>{const x=wMax(n);return x?short(n)+': best score '+(x.s*100).toFixed(0)+'% ('+x.m+')':''}).filter(Boolean).join('; ');
+  const h=wEl('h2',null,b.title);h.append(wEl('span','wmax',wMaxTxt(b)));if(wBest(b)>=0.95)h.append(wEl('span','wsat','saturated'));
+  h.title=(b.eci_names||[]).map(n=>{const x=wMax(n);return x?short(n)+': best score '+(x.s*100).toFixed(0)+'% ('+x.m+')':''}).filter(Boolean).join('; ')+'. Epoch’s fitted difficulty (ECI at which a model scores 50%): '+wDiff(b).toFixed(0);
   c.append(h);if(b.human&&!(b.ceiling&&b.ceiling.text)){const wp=wEl('p','wwhat');wp.append(wEl('b',null,'Humans: '),b.human);c.append(wp)}
   const rows=(b.rows&&b.rows.length?b.rows:b.samples||[]).slice(0,2);
   if(b.ceiling&&b.ceiling.text){const t=b.ceiling.text,f=wFirst(t),d=wEl('details','wceil'),sm=wEl('summary');sm.append(wEl('b',null,'Is 100% attainable? '),f);const rest=wEl('p');rest.append(t.slice(f.length).trim()+' ',wLink(b.ceiling.url,'['+wHost(b.ceiling.url)+']'));d.append(sm,rest);c.append(d)}
@@ -1000,13 +1009,13 @@ function buildFail(){
   if(b.modes&&b.modes.length){const d=wEl('details','wmodes'),ul=wEl('ul');d.append(wEl('summary',null,'Failure types its authors report ('+b.modes.length+')'),ul);
    b.modes.forEach(f=>{const li=wEl('li');li.append(wEl('b',null,f.label+'. '),f.desc+' ',wEl('span','wsub',(f.about||'')+(f.date?', '+f.date:'')+' '),wLink(f.url,'['+wHost(f.url)+']'));ul.append(li)});c.append(d)}
   return c};
- const all=FAILS.benchmarks.slice().sort((a,b)=>wDiff(b)-wDiff(a)),kids=[];
- const jump=wEl('p','wjump');jump.append('Hardest first: ');all.forEach((b,i)=>{if(i)jump.append(' · ');const a=wEl('a',null,b.title);a.href='#w-'+b.id;a.onclick=e=>{e.preventDefault();document.getElementById('w-'+b.id).scrollIntoView({behavior:'smooth'})};jump.append(a)});
+ const all=FAILS.benchmarks.slice().sort((a,b)=>wBest(a)-wBest(b)||wDiff(b)-wDiff(a)),kids=[];
+ const jump=wEl('p','wjump');jump.append('Least saturated first: ');all.forEach((b,i)=>{if(i)jump.append(' · ');const a=wEl('a',null,b.title+' '+(wBest(b)*100).toFixed(0)+'%');a.href='#w-'+b.id;a.onclick=e=>{e.preventDefault();document.getElementById('w-'+b.id).scrollIntoView({behavior:'smooth'})};jump.append(a)});
  kids.push(jump,...all.map(card));
  const refs=wEl('div','wrefs');refs.append(wEl('h3',null,'References'));
  FAILS.benchmarks.forEach(b=>{if(!b.links||!b.links.length)return;const p=wEl('p');p.append(wEl('b',null,b.title+': '));b.links.forEach((l,i)=>{if(i)p.append(' · ');p.append(wLink(l.url,l.title))});refs.append(p)});
  kids.push(refs);root.replaceChildren(...kids);
- document.getElementById('wnotes').textContent='Compiled '+(FAILS.retrieved||'')+' from each benchmark’s documentation and public write-ups, using only evidence from the last six months. Benchmarks run from hardest to easiest by Epoch’s fitted difficulty (the capability at which a model scores 50%). Two failed tasks are shown per benchmark where a specific attempt by a current model is documented, otherwise two sample tasks; click a row for the full task and what is known. “Max” is the best score of any model, as Epoch normalises scores for ECI (0% = random guessing, 100% = the highest attainable score), so it can differ from the raw scores in a row; hover a heading for the model.';
+ document.getElementById('wnotes').textContent='Compiled '+(FAILS.retrieved||'')+' from each benchmark’s documentation and public write-ups, using only evidence from the last six months. Benchmarks run from least to most saturated, by the best score any model has (“max”); those at 95% or more are marked saturated. Two failed tasks are shown per benchmark where a specific attempt by a current model is documented, otherwise two sample tasks; click a row for the full task and what is known. “Max” is the best score of any model, as Epoch normalises scores for ECI (0% = random guessing, 100% = the highest attainable score), so it can differ from the raw scores in a row; hover a heading for the model.';
 }
 
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;syncTabs();changed()});

@@ -2,6 +2,9 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ECI Explorer</title>
+<meta name="description" content="Explore Epoch AI’s Epoch Capabilities Index: frontier ECI and the benchmark scores behind it, how well each benchmark fits, how ECI changes under other fitting choices, and what frontier models still fail at.">
+<meta property="og:title" content="ECI Explorer">
+<meta property="og:description" content="Frontier ECI and the benchmark scores behind it, benchmark-by-benchmark fit, alternative fitting choices, and what frontier models still fail at.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-strict-dist-min@2.35.2/plotly-strict.min.js"></script>
@@ -108,6 +111,7 @@ tr.wdet blockquote{margin:4px 0 8px;padding:2px 0 2px 10px;border-left:3px solid
 tr.wdet figure{margin:8px 0}tr.wdet figcaption{font-size:12.5px;color:var(--muted)}
 .wbig{max-width:min(100%,720px);border-radius:6px;border:1px solid var(--line)}
 details.wceil{font-size:13px;color:var(--muted);margin:2px 0 4px;max-width:110ch}details.wceil summary{cursor:pointer}details.wceil summary b{color:var(--ink)}details.wceil p{margin:4px 0 0 16px!important}
+.wsat{font:600 11px "Public Sans",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:8px;vertical-align:middle}
 details.wmodes{margin-top:4px}details.wmodes summary{cursor:pointer}
 #wbody ul{margin:4px 0 0;padding-left:18px}#wbody li{margin:3px 0}
 #wbody li a,.wrefs a{font-size:12.5px;overflow-wrap:anywhere}
@@ -348,11 +352,12 @@ let lastGood=null;
 function changed(fromHash){
  B.forEach(d=>boxes[d.k].checked=d.on);
  const non=B.filter(d=>d.on).length;
- fitstat.textContent=curve!=='eci'?'all '+B.length+' ('+CURVES[curve].label+')':non===B.length?'all '+B.length+' (published ECI)':non+' of '+B.length+' (refitted)';
+ fitstat.textContent=tab==='fit'?(non===B.length?'all '+B.length:non+' of '+B.length)+' (used by the fit above)':curve!=='eci'?'all '+B.length+' ('+CURVES[curve].label+')':non===B.length?'all '+B.length+' (published ECI)':non+' of '+B.length+' (refitted)';
  boxes.forEach(c=>c.disabled=curve!=='eci'&&tab!=='fit');document.querySelectorAll('[data-fit]').forEach(b=>b.disabled=curve!=='eci'&&tab!=='fit');
  try{fitmsg.innerHTML=runFit();fitmsg.className='';lastGood=B.map(d=>d.on)}
  catch(e){fitmsg.textContent='Can’t refit: '+e.message+' Showing the last valid fit.';fitmsg.className='err';
   if(lastGood){const keep=B.map(d=>d.on);B.forEach((d,i)=>d.on=lastGood[i]);try{runFit()}catch(_){setPublished()}B.forEach((d,i)=>d.on=keep[i])}else setPublished()}
+ if(tab==='fit'){fitmsg.className='';fitmsg.textContent='Untick benchmarks to leave them out of the fit above.'}
  derive();build();if(!fromHash)saveHash();
 }
 function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',hm&&tab==='frontier'?'m='+encodeURIComponent(hm):'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):''].filter(Boolean).join('&');
@@ -465,7 +470,7 @@ function build(){
  YR=scale==='implied'?r2:[-5,5];
  const ancShapes=ANC.map(a=>({type:'line',xref:'paper',yref:'y2',x0:0,x1:1,y0:a.v,y1:a.v,line:{color:css('--eci'),width:1.2,dash:'dot'},opacity:.75,layer:'below'}));
  const ancAnns=ANC.filter(a=>a.v>r2[0]&&a.v<r2[1]).map(a=>({xref:'paper',x:0.005,yref:'y2',y:a.v,xanchor:'left',yanchor:'bottom',showarrow:false,text:'<b>'+a.m+' \u2261 '+a.v+'</b> (fixed)',font:{size:11,color:css('--eci')},bgcolor:css('--labelbg')}));
- if(D.canon&&D.canon.length){const c=D.canon[D.canon.length-1];ancAnns.push({x:c[0],y:c[2],xref:'x',yref:'y2',xanchor:'left',yanchor:'top',xshift:6,showarrow:false,text:'Epoch\u2019s published ECI',font:{size:11,color:mut},bgcolor:css('--labelbg')})}
+ if(D.canon&&D.canon.length){const c=D.canon[D.canon.length-1];ancAnns.push({x:c[0],y:c[2],xref:'x',yref:'y2',xanchor:'right',yanchor:'top',xshift:-8,yshift:-4,showarrow:false,text:'Epoch\u2019s published ECI',font:{size:11,color:mut},bgcolor:css('--labelbg')})}
  const layout={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Public Sans, system-ui, sans-serif',color:ink,size:12},
   margin:{l:narrow?42:62,r:narrow?38:62,t:narrow?175:185,b:62},hovermode:'closest',dragmode:narrow?false:'zoom',
   xaxis:{type:'date',showgrid:false,zeroline:false,dtick:'M12',tick0:'2023-01-01',tickformat:'%Y',ticklabelmode:'period',ticks:'',range:[X0(),X1()],tickfont:{color:mut}},annotations:(labels?labelAnns():[]).concat(MA.anns,growthAnns(),ancAnns),shapes:ancShapes.concat(['2024','2025','2026','2027'].map(y=>({type:'line',xref:'x',yref:'paper',x0:y+'-01-01',x1:y+'-01-01',y0:0,y1:1,line:{color:mut,width:1.4},opacity:.55,layer:'below'})).concat(MA.lines)),
