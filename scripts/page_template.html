@@ -44,10 +44,12 @@ details.fit summary b{font-weight:600}
 .fitgrid input{accent-color:var(--accent)}
 #fitmsg{font-size:13px;color:var(--muted);margin:6px 0 2px}
 #fitmsg.err{color:#c0392b}
-nav.tabs{display:flex;flex-wrap:wrap;gap:0;margin:2px 0 14px;border-bottom:1px solid var(--line)}
-nav.tabs button{font:inherit;font-size:15px;padding:8px 14px;border:0;border-bottom:3px solid transparent;background:none;color:var(--muted);cursor:pointer;margin-bottom:-1px}
-nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
-nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+nav.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 18px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+nav.tabs button{font:inherit;font-size:16px;font-weight:600;padding:10px 18px;border:1.5px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);cursor:pointer}
+nav.tabs button:hover{border-color:var(--accent)}
+nav.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:640px){nav.tabs button{font-size:14px;padding:8px 12px;flex:1 1 44%}}
 #rplot{width:100%;min-height:400px}
 .rkey{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted);margin:2px 0 4px}
 .rkey b.bd{display:inline-block;width:18px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px;background:var(--nullband)}
@@ -72,28 +74,24 @@ table.xt tr.cur td{background:var(--band);font-weight:600}
 table.xt tr[data-x]{cursor:pointer}
 table.xt .sw{display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle}
 table.xt button{font:inherit;font-size:12px;border:0;background:none;color:var(--muted);cursor:pointer;padding:0 4px}
-#wnav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
-#wnav button{font:inherit;font-size:13.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
-#wnav button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
-#wbody{max-width:1000px}
-#wbody h2{font:500 1.45rem/1.2 "Newsreader",Georgia,serif;margin:0 0 6px}
-#wbody h3{font-size:14px;font-weight:600;margin:18px 0 8px}
-#wbody h4{font-size:14px;font-weight:600;margin:0 0 4px}
-#wbody p{margin:0 0 8px;max-width:82ch}
-.wwhat{font-size:15px}
-.wsmall,.wsrc{font-size:13px;color:var(--muted)}
-.wsrc a{overflow-wrap:anywhere}
-.wavail{font-size:13.5px;border-left:3px solid var(--line);padding-left:10px;color:var(--muted)}
-.wscores{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:4px 28px}
-.wscores h3{margin-top:8px}
-.wbar{display:grid;grid-template-columns:minmax(110px,40%) 1fr 40px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
-.wbar .wt{height:10px;background:var(--grid);border-radius:3px;overflow:hidden}
-.wbar .wt i{display:block;height:100%;background:var(--accent);border-radius:3px}
-.wbar .wv{text-align:right;font-variant-numeric:tabular-nums}
-.wgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px}
-.wcard{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:10px 12px;font-size:14px}
-.wcard.wex{margin:0 0 10px}
-.wcard blockquote{margin:6px 0 8px;padding:2px 0 2px 10px;border-left:3px solid var(--accent);font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+#wbody{max-width:980px}
+#wbody h2{font:500 1.3rem/1.2 "Newsreader",Georgia,serif;margin:0 0 2px}
+#wbody h2.wgroup{font:600 13px/1.3 "Public Sans",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 8px}
+#wbody h3{font-size:12.5px;font-weight:600;color:var(--muted);margin:8px 0 2px}
+#wbody p{margin:0 0 4px}
+.wb{border-top:1px solid var(--line);padding:10px 0 8px;font-size:14px}
+.wwhat,.wsc,.wmodel,.wjump,.wrefs{color:var(--muted)}
+.wmax{font:400 14px "Public Sans",system-ui,sans-serif;color:var(--muted)}
+.wwhat,.wsc,.wrefs{font-size:13px}
+.wsc b{color:var(--ink);font-variant-numeric:tabular-nums}
+.wnote{border-left:3px solid var(--line);padding-left:10px;margin:6px 0!important}
+#wbody ul{margin:0;padding-left:18px}
+#wbody li{margin:3px 0}
+.wtask{font-style:italic}
+.wfail{color:var(--ink)}
+#wbody li a,.wrefs a{font-size:12.5px;overflow-wrap:anywhere}
+.wjump{font-size:13.5px}
+.wrefs{margin-top:22px;border-top:1px solid var(--line);padding-top:6px}
 p.src{font-size:14px;color:var(--muted);margin:0 0 12px}
 a{color:var(--accent)}
 .notes{color:var(--muted);font-size:13.5px;max-width:82ch;margin-top:10px}
@@ -101,7 +99,7 @@ a{color:var(--accent)}
 </style></head>
 <body><main>
 <h1 id="title">ECI Explorer</h1>
-<p class="src">Built by Tom Cunningham @ METR, from Epoch AI’s <a href="https://epoch.ai/benchmarks/eci">Epoch Capabilities Index</a> · data: <a href="https://epoch.ai/data/benchmark_data.zip">benchmark_data.zip</a> · fitting code: <a href="https://github.com/epoch-research/eci-public">eci-public</a> · method: <a href="https://arxiv.org/abs/2512.00193">A Rosetta Stone for AI Benchmarks</a></p>
+<p class="src">Built by Tom Cunningham @ METR, from Epoch AI’s <a href="https://epoch.ai/benchmarks/eci">Epoch Capabilities Index</a></p>
 <nav class="tabs" role="tablist" aria-label="View">
  <button role="tab" data-tab="frontier" aria-selected="true">Frontier over time</button>
  <button role="tab" data-tab="resid" aria-selected="false">Fit by benchmark (residuals)</button>
@@ -191,8 +189,6 @@ a{color:var(--accent)}
 <div class="notes" id="xnotes"></div>
 </div>
 <div id="wtab" hidden>
-<p class="lede" style="margin-top:0">Why don’t the strongest models score 100%? Choose a benchmark that is not yet saturated to see what it asks, how the strongest models score, sample tasks, and the kinds of mistakes its authors and others have documented.</p>
-<div id="wnav" role="group" aria-label="Benchmark"></div>
 <div id="wbody"></div>
 <div class="notes" id="wnotes"></div>
 </div>
@@ -334,14 +330,14 @@ function changed(fromHash){
   if(lastGood){const keep=B.map(d=>d.on);B.forEach((d,i)=>d.on=lastGood[i]);try{runFit()}catch(_){setPublished()}B.forEach((d,i)=>d.on=keep[i])}else setPublished()}
  derive();build();if(!fromHash)saveHash();
 }
-function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):'',tab==='fail'&&wSel?'w='+wSel:''].filter(Boolean).join('&');
+function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):''].filter(Boolean).join('&');
  try{history.replaceState(null,'',h?'#'+h:location.pathname+location.search)}catch(e){}}
 function readHash(){
  const g=k=>decodeURIComponent((location.hash.match(new RegExp(k+'=([^&]*)'))||[])[1]||'');
  const l=g('lab');lab=RAW.labs.includes(l)?l:'';ls.value=lab;
  curve=CURVES[g('curve')]?g('curve'):'eci';cs.value=curve;scale=g('scale')==='implied'?'implied':'logodds';
  FROM=[...fs_.options].some(o=>o.value===g('from'))?g('from'):RAW.start;fs_.value=FROM;syncButtons();
- tab=g('tab')==='resid'?'resid':g('tab')==='fit'?'fit':g('tab')==='fail'?'fail':'frontier';wSel=g('w');{const v=g('x').split('_');xc={...XDEF};if(v.length===XK.length)XK.forEach((k,j)=>{const o=document.getElementById('x'+k);if([...o.options].some(q=>q.value===v[j]))xc[k]=v[j]});XK.forEach(k=>document.getElementById('x'+k).value=xc[k])}rY=g('ry')==='linear'?'linear':'logodds';rShow=g('rshow')==='resid'?'resid':'scores';rX=g('rx')==='own'?'own':'shared';{const v=g('rsort'),o=document.getElementById('rsort');if([...o.options].some(x=>x.value===v)){rSort=v;o.value=v}}syncTabs();
+ tab=g('tab')==='resid'?'resid':g('tab')==='fit'?'fit':g('tab')==='fail'?'fail':'frontier';{const v=g('x').split('_');xc={...XDEF};if(v.length===XK.length)XK.forEach((k,j)=>{const o=document.getElementById('x'+k);if([...o.options].some(q=>q.value===v[j]))xc[k]=v[j]});XK.forEach(k=>document.getElementById('x'+k).value=xc[k])}rY=g('ry')==='linear'?'linear':'logodds';rShow=g('rshow')==='resid'?'resid':'scores';rX=g('rx')==='own'?'own':'shared';{const v=g('rsort'),o=document.getElementById('rsort');if([...o.options].some(x=>x.value===v)){rSort=v;o.value=v}}syncTabs();
  const off=new Set(g('drop').split('.').filter(Boolean).map(Number));B.forEach(d=>d.on=!off.has(d.k));
  if(off.size)document.getElementById('fitbox').open=true;
 }
