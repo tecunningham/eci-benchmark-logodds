@@ -7,7 +7,7 @@ The dashboard ([`index.html`](index.html)) has four tabs:
 1. **Frontier over time.** Frontier ECI with the benchmark scores behind it, in log-odds.
 2. **Fit by benchmark (residuals).** One panel per benchmark: does it follow a logistic in ECI?
 3. **Try other fitting choices.** Refit capability in your browser under a different link function, loss, clipping rule, penalty or model filter, and compare the frontier and its growth across fits. See [below](#trying-other-fitting-choices-in-the-browser).
-4. **What frontier models still fail at.** For about ten benchmarks that are not yet saturated: what they ask, how the strongest models score, sample tasks, and the failure types documented in public sources (`data/failures.json`).
+4. **What frontier models still fail at.** For twelve benchmarks that are not yet saturated: two failed tasks each where a specific attempt by a current frontier model is documented, as a table of task, reference answer (and how it was baselined) and agent answer with its score; click a row for details. Only evidence from the last six months is used, and benchmarks with no such evidence say so. Sources: `data/failures_rows.json` (rows), `data/failures.json` (notes, built by `scripts/failures_curate.py` from `data/failures_full.json`).
 
 > **Data update, 17 Nov 2026.** The data are Epoch's `benchmark_data.zip` as retrieved on 17 Nov 2026: 256 models (latest released 9 Nov 2026), 57 benchmarks, 2,879 scores. Since the 1 Oct snapshot Epoch has dropped five benchmarks from ECI (DeepSWE, HLE, Lech Mazur Writing, SWE-Bench verified, ScienceQA), added two (SpireClimb, WeirdML v3), and now drops models with fewer than four scores between 10% and 90%.
 >

@@ -11,6 +11,8 @@ const wMax=n=>{const d=B.find(x=>x.name===n);if(!d||!d.p.length)return null;cons
 const wMaxTxt=b=>{const v=(b.eci_names||[]).map(n=>({n,x:wMax(n)})).filter(o=>o.x);if(!v.length)return'';
  return' (max '+v.map(o=>(o.x.s*100).toFixed(0)+'%'+(v.length>1?' '+short(o.n).replace('FrontierMath ',''):'')).join(', ')+')'};
 const wOpen=new Set();
+// first sentence (or clause) of a long cell; the click-through shows the rest
+const wFirst=(t,re)=>{t=t||'';const m=t.match(re||/^.*?[.!?](?=\s|$)/);return m&&m[0].length<t.length?m[0]:t};
 function buildFail(){
  const root=document.getElementById('wbody');document.getElementById('lede').textContent='';
  if(!FAILS||!FAILS.benchmarks||!FAILS.benchmarks.length){root.textContent='No failure notes have been gathered yet.';return}
@@ -26,12 +28,12 @@ function buildFail(){
    rows.forEach((r,j)=>{const key=b.id+'/'+j,tr=wEl('tr','wrow'),dr=wEl('tr','wdet'),dd=wEl('td');dd.colSpan=3;dr.append(dd);
     const more=wEl('button','wmore','Details');more.type='button';
     tr.append(cell('Task',wEl('span',null,r.task||''),wImg(r.image,'wthumb'),more),
-     cell('Reference answer',wEl('span',null,r.reference||'Not public.'),r.reference_baseline?wEl('span','wsub',r.reference_baseline):null),
-     cell('Agent answer',wEl('span','wsub',(r.agent_model||'Model not named')+(r.agent_score?' · ':'')),r.agent_score?wEl('b','wscore',r.agent_score):null,
+     cell('Reference answer',wEl('span',null,r.reference||'Not public.'),r.reference_baseline?wEl('span','wsub',wFirst(r.reference_baseline)):null),
+     cell('Agent answer',wEl('span','wsub',(r.agent_model||'Model not named')+(r.agent_score?' · ':'')),r.agent_score?wEl('b','wscore',wFirst(r.agent_score,/^[^;(]*[^;( ]/)):null,
       r.failure?wEl('b','wfail',r.failure+'.'):wEl('span','wsub wblock','Cause of failure not documented.'),wEl('span',null,r.agent_answer||'')));
     // click-through detail
     const add=(t,v)=>{if(!v)return;const p=wEl('p');p.append(wEl('b',null,t+' '),v);dd.append(p)};
-    add('Task in full.',r.task_detail);add('What went wrong.',r.detail);
+    add('Task in full.',r.task_detail);add('How the reference was set.',r.reference_baseline);add('Score.',r.agent_score);add(r.failure?'What went wrong.':'What is known.',r.detail);
     if(r.quote)dd.append(wEl('blockquote',null,'“'+r.quote+'”'));
     const big=wImg(r.image,'wbig');if(big){const f=wEl('figure');f.append(big,wEl('figcaption',null,(r.image.caption||'')+(r.image.credit?' ('+r.image.credit+')':'')));dd.append(f)}
     const src=wEl('p','wsub');if(r.date)src.append(r.date+' · ');if(r.source_url)src.append('Source: ',wLink(r.source_url,wHost(r.source_url)));if(r.task_url&&r.task_url!==r.source_url)src.append(' · Task: ',wLink(r.task_url,wHost(r.task_url)));dd.append(src);
