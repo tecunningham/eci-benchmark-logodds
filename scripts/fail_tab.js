@@ -19,7 +19,7 @@ function buildFail(){
   const c=wEl('section','wb');c.id='w-'+b.id;
   const h=wEl('h2',null,b.title);h.append(wEl('span','wmax',wMaxTxt(b)));
   h.title=(b.eci_names||[]).map(n=>{const x=wMax(n);return x?short(n)+': best score '+(x.s*100).toFixed(0)+'% ('+x.m+')':''}).filter(Boolean).join('; ');
-  const wp=wEl('p','wwhat',b.what||'');if(b.human)wp.append(' ',wEl('b',null,'Humans: '),b.human);c.append(h,wp);
+  c.append(h);if(b.human){const wp=wEl('p','wwhat');wp.append(wEl('b',null,'Humans: '),b.human);c.append(wp)}
   const rows=b.rows||[];
   if(rows.length){
    const tb=wEl('table','wt'),hd=wEl('thead'),hr=wEl('tr');['Task','Reference answer','Agent answer'].forEach(t=>hr.append(wEl('th',null,t)));hd.append(hr);const body=wEl('tbody');tb.append(hd,body);
