@@ -1,8 +1,18 @@
-# Next steps: handoff note (as of 18 Oct 2026)
+# Next steps: handoff note (as of 17 Nov 2026)
 
 Written for the next Claude session working in this repo. Read this first, then `README.md`.
 
-## Where things stand
+## Session of 17 Nov 2026: read this first
+
+- **Data updated** to Epoch's zip as retrieved 17 Nov 2026 (256 models, 57 benchmarks, 2,879 scores). To update again: download https://epoch.ai/data/benchmark_data.zip, copy the three files in its `epoch_capabilities_index/` folder into `data/epoch/`, set `SNAPSHOT` in `scripts/build_data.py`, add any new benchmark to `scripts/areas.py`, then run `build_data`, `npca_build`, `npca_links`, `npca_accel`, `curve_fits`, `resid_null`, `npca_forward`, the four figure scripts and both page builders (about 55 minutes on 4 cores, with `OMP_NUM_THREADS=1`).
+- **Epoch now publishes a Bayesian fit** (Beta likelihood around the same logistic, MCMC; `eci-public/src/eci/bayesian.py`). `scripts/eci_fit.py` is the old least-squares objective and no longer reproduces published ECI exactly (median gap 0.9 points). Every analysis script still refits by least squares. Not yet done: porting the nonparametric analyses to the Beta likelihood, and simulating the residual tab's null from the Bayesian fit.
+- **The dashboard is now "ECI Explorer" with four tabs.** The page is assembled by `scripts/build_page.py` from `page_template.html` plus `eci_fit.js`, `flex_fit.js` (open-choices solver), `fit_tab.js` (third tab) and `fail_tab.js` (fourth tab).
+  - Third tab: link, loss, clipping, penalty, common slope, minimum scores per model; approximate delta-method intervals; 5-fold hold-out. Not included: fitted floor/ceiling, free curves.
+  - Fourth tab: `data/failures_full.json` (sourced research notes with verbatim quotes) → `scripts/failures_curate.py` → `data/failures.json`; per-task rows in `data/failures_rows.json`; images in `figures/failures/`. The user wants only failures from the last six months, by current frontier models, in a compact table (task, reference answer, agent answer), with little text about the benchmarks themselves.
+- **Numbers that were NOT re-run on the new data** (README marks them): anchor sensitivity, the two extra forward-test splits, `npca_tune.py`, and the hover-weight reconstruction check. `resid_null.py` was run with its default 200 simulations, not 1,000.
+- The items below are from the 18 Oct session and describe the 1 Oct data; the README has the current numbers.
+
+## Where things stand (18 Oct 2026)
 
 - Live: https://tecunningham.github.io/eci-benchmark-logodds/ (`index.html`, the dashboard) and
   https://tecunningham.github.io/eci-benchmark-logodds/npca.html (nonparametric / curve-shape analysis).
