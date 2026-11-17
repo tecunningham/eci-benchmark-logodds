@@ -19,6 +19,8 @@ if fails.exists():
     for b in F["benchmarks"]:
         b["rows"] = R.get(b["id"], {}).get("rows", [])[:2]
         b["no_rows_reason"] = R.get(b["id"], {}).get("no_rows_reason")
+        b["samples"] = R.get(b["id"], {}).get("samples", [])[:2]
+        b["ceiling"] = R.get(b["id"], {}).get("ceiling")
     page = page.replace(key, json.dumps(F, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c"))
 else:
     page = page.replace(key, "null")
