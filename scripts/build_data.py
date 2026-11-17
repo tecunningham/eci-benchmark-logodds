@@ -1,4 +1,4 @@
-"""Build plot data from Epoch's ECI files (data/epoch/*.csv, from benchmark_data.zip, 1 Oct 2026 snapshot).
+"""Build plot data from Epoch's ECI files (data/epoch/*.csv, from benchmark_data.zip, retrieved 17 Nov 2026).
 
 Writes
   data/frontier_all.json  frontier across all labs, from GPT-4 on (used by make_figure.py)
@@ -23,6 +23,7 @@ P0["date"] = P0.Model.map(E0.set_index("Model").date)  # use ECI release dates t
 EPS = 0.01  # pin 0/1 scores to 1%/99% so log-odds stay finite
 START = pd.Timestamp("2023-03-14")  # GPT-4
 ANCHOR_BENCH = "Winogrande"  # Epoch pins its discriminability to 1
+SNAPSHOT = "2026-11-17"  # date benchmark_data.zip was retrieved; growth windows end here
 MIN_MODELS = 5  # labs with fewer models since START are offered only under "All labs"
 rel = B.set_index("benchmark_name").benchmark_release_date
 
@@ -112,7 +113,7 @@ def build_compact(E, P):
         models=[[m, l, d.strftime("%Y-%m-%d"), round(e, 2), nn(lo), nn(hi)]
                 for m, l, d, e, lo, hi in zip(E.Model, E.lab, E.date, E.eci, E.eci_ci_low, E.eci_ci_high)],
         labs=sorted([l for l in n[n >= MIN_MODELS].index if l != "Other"], key=lambda l: -n[l]),
-        b=out, areas=ORDER, cols=COL, start=START.strftime("%Y-%m-%d"), snapshot="2026-10-01",
+        b=out, areas=ORDER, cols=COL, start=START.strftime("%Y-%m-%d"), snapshot=SNAPSHOT,
         slope=float(B.estimated_slope_scaled.median()),
         fit=dict(anchor=ANCHOR_BENCH, low=list(eci_fit.ANCHOR_LOW), high=list(eci_fit.ANCHOR_HIGH),
                  reg=eci_fit.REG, clip=eci_fit.CLIP,

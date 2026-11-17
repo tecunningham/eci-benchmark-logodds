@@ -1,4 +1,6 @@
-# Frontier ECI and the benchmark scores behind it
+# ECI Explorer
+
+**Dashboard: https://tecunningham.github.io/eci-benchmark-logodds/**
 
 > **Working on this repo?** Start with [`NEXT_STEPS.md`](NEXT_STEPS.md): current findings, open questions and a map of the code.
 

@@ -16,7 +16,7 @@ def short(n):
 cm=plt.get_cmap('turbo')
 fig,ax=plt.subplots(figsize=(15,11),dpi=150)
 fig.subplots_adjust(left=.06,right=.94,bottom=.08,top=.73)
-X0,X1=pd.Timestamp('2023-02-15'),pd.Timestamp('2027-05-01'); ax.set_xlim(X0,X1); ax.set_ylim(-5,5)
+X0,X1=pd.Timestamp('2023-02-15'),pd.Timestamp('2027-06-15'); ax.set_xlim(X0,X1); ax.set_ylim(-5,5)
 items=[]
 for i,d in enumerate(B):
     if not d['fr']: continue
@@ -33,7 +33,7 @@ for yr in [2023,2024,2025,2026]: ax.text(pd.Timestamp(f'{yr}-07-02'),-0.025,str(
 ax.set_ylabel('Benchmark score of frontier-ECI models (log-odds scale)')
 fig.canvas.draw(); bb=ax.get_window_extent()
 lpp=10/bb.height; dpp=(X1-X0)/bb.width; g=9.5*fig.dpi/72*lpp*1.05; cw=7*0.6*fig.dpi/72
-GUT=pd.Timestamp('2026-06-01'); GX=pd.Timestamp('2026-10-15')
+GUT=pd.Timestamp('2026-06-01'); GX=pd.Timestamp('2026-11-25')
 gut=sorted([i for i in items if i['x']>=GUT],key=lambda i:i['y'])
 for k,it in enumerate(gut): it['ly']=it['y'] if k==0 else max(it['y'],gut[k-1]['ly']+g)
 for k in range(len(gut)-1,-1,-1):
@@ -75,5 +75,5 @@ for yr in [2023,2024,2025,2026]:
 span=10/0.106875; a2.set_ylim(140-span/2,140+span/2); a2.set_ylabel('Frontier ECI (black)')
 ax.yaxis.tick_right(); ax.yaxis.set_label_position('right'); a2.yaxis.tick_left(); a2.yaxis.set_label_position('left')
 fig.suptitle('Frontier ECI (black, left) and benchmark scores of the 22 models that set it from GPT-4 on (colour by area, right, log-odds)\nFrontier models named along the top with their ECI; ECI axis slope-matched to median benchmark; solid verticals = year starts, dotted = frontier model releases',fontsize=11,y=.99)
-fig.text(0.01,0.005,'Data: Epoch AI processed_data_for_eci.csv + eci_scores.csv (benchmark_data.zip, 1 Oct 2026 snapshot); 0/1 scores pinned to 1%/99%; shaded = 90% CI; under each year, frontier ECI growth along the line (* = part year, annualised). CC BY 4.0',fontsize=7.5,color='gray')
+fig.text(0.01,0.005,'Data: Epoch AI processed_data_for_eci.csv + eci_scores.csv (benchmark_data.zip, retrieved 17 Nov 2026); 0/1 scores pinned to 1%/99%; shaded = 90% CI; under each year, frontier ECI growth along the line (* = part year, annualised). CC BY 4.0',fontsize=7.5,color='gray')
 fig.savefig(OUT)
