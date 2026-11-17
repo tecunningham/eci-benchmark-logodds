@@ -4,12 +4,105 @@
   {
    "id": "frontiermath",
    "rows": [],
-   "no_rows_reason": "The private problems and all transcripts are unpublished, Epoch's data lists no public log for any late-2026 model, and its log viewer for public-sample runs is behind a human-verification check, so no specific problem that Fable 5.2, Opus 5.5 or GPT-6 Astra got wrong can be shown."
+   "no_rows_reason": "The private problems and all transcripts are unpublished, Epoch's data lists no public log for any late-2026 model, and its log viewer for public-sample runs is behind a human-verification check, so no specific problem that Fable 5.2, Opus 5.5 or GPT-6 Astra got wrong can be shown.",
+   "ceiling": {
+    "text": "Tier 4: 100% is attainable, since two models score 100% on the private set (ECI score_ceiling 1.0). Tiers 1-3: Epoch's ECI metadata sets score_ceiling 0.95 (random_baseline 0); the best score is 95.1%. Epoch's methodology says the ceiling is 'the highest achievable score' but no page explaining the 0.95 was found; the likely reason is residual problem errors, given that the June 2026 audit had to correct errors in 42% of problems.",
+    "url": "https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2"
+   },
+   "samples": [
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": null,
+     "task": "Tier 1 sample: compute the expected perimeter of the region containing the centre of a regular 101-gon when each diagonal is drawn with probability 0.001.",
+     "task_detail": "Let \\(\\mathcal P\\) be a regular \\(101\\)-gon of circumradius \\(1\\). Draw each diagonal of \\(\\mathcal P\\) with probability 0.001. This splits \\(\\mathcal P\\) into several closed regions. Let \\(E\\) be the expected value of the perimeter of the region containing the center of \\(\\mathcal P\\). Compute \\(\\lfloor 10^9 E \\rfloor.\\) The model may reason and run Python (30-second limit per call, 1,000,000-token budget) and must submit one final answer.",
+     "reference": "Answer key: 4771880153. Technique listed by Epoch: trigonometry, linearity of expectation.",
+     "reference_baseline": "Written and peer-reviewed by expert mathematicians, with a worked solution on Epoch's page. Tier 1 is described as: Problems resemble advanced undergraduate or International Math Olympiad-style questions but permit the use of computational tools and references. No solve time or human success rate for this problem is published.",
+     "solvable": "Yes: an exact answer and a full worked solution are published.",
+     "solvable_detail": "The problem has a closed-form derivation given on the sample-problems page, so the reference is attainable. For the private set, Epoch's ECI metadata puts the attainable ceiling of Tiers 1-3 at 95%.",
+     "solvable_url": "https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems",
+     "detail": "Late-2026 models score 90-95% on the private Tiers 1-3 set and 95-100% on Tier 4; which problems they miss, and whether any current model has been run on this public sample, is not published.",
+     "source_url": "https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems",
+     "task_url": "https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems"
+    },
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": null,
+     "task": "Tier 2 sample: for a recursively defined map on permutations of size 10^12, compute the floor of the expected number of descents of the image of a random permutation.",
+     "task_detail": "Let \\(W\\) be the set of finite words with all distinct letters over the alphabet of positive integers. Define a function \\(F:W\\rightarrow W\\) recursively as follows. First, let \\(F(\\epsilon)=\\epsilon\\), where \\(\\epsilon\\) is the empty word. Given a nonempty word \\(w\\in W\\), let \\(F(w)=F(L)F(R)m\\), where \\(m\\) is the largest number in \\(w\\) and \\(w=LmR\\). With n = 10^12 and a uniformly random permutation sigma, X is the expected number of i with (F(sigma))^-1(i+1) < (F(sigma))^-1(i); compute the floor of X. (Second half summarised; full statement on Epoch's page.)",
+     "reference": "Answer key: 499999999972 (X = (n+1)/2 - H_n, with H_n the harmonic number). Subject: combinatorics; technique: linearity of expectation.",
+     "reference_baseline": "Written and peer-reviewed by expert mathematicians, with a worked solution. Tier 2 is described as: These reach advanced graduate-level difficulty, demanding specialized proofs, coding, and multi-stage reasoning. An expert may spend a day or more to uncover and execute a solution.",
+     "solvable": "Yes: answer key and worked solution are published; Tier 2 takes an expert about a day or more.",
+     "solvable_detail": "The published solution reduces the problem to a short formula. The time estimate is Epoch's description of the tier, not a measurement on this problem.",
+     "solvable_url": "https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems",
+     "detail": "Late-2026 models score 90-95% on the private Tiers 1-3 set and 95-100% on Tier 4; which problems they miss, and whether any current model has been run on this public sample, is not published.",
+     "source_url": "https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems",
+     "task_url": "https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems"
+    }
+   ]
   },
   {
    "id": "remote-labor-index",
    "rows": [],
-   "no_rows_reason": "Only overall automation rates are published for 2026 models; the 10 public projects have example AI deliverables only from 2025 agents (Grok 4, Manus, Sonnet 4.5) and no per-project verdicts, so there is no public project-level failure by a current model."
+   "no_rows_reason": "Only overall automation rates are published for 2026 models; the 10 public projects have example AI deliverables only from 2025 agents (Grok 4, Manus, Sonnet 4.5) and no per-project verdicts, so there is no public project-level failure by a current model.",
+   "ceiling": {
+    "text": "100% is attainable in principle: every project was completed by a paid human freelancer, and the score is the share of projects where the AI's deliverable is judged at least as good as that human's. The practical ceiling may be slightly lower because the verdict is a human judgment (94.4% inter-annotator agreement in the paper). ECI score_ceiling 1.0, random_baseline 0.",
+    "url": "https://arxiv.org/abs/2510.26787"
+   },
+   "samples": [
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": {
+      "file": "figures/failures/rli_public_001_human_ring.jpg",
+      "caption": "Human freelancer's reference deliverable for public project 001: rose-gold render of the ring with a marquise-cut diamond (one of four renders; resized from 1280x1280).",
+      "credit": "Center for AI Safety / Scale AI, RLI public set (cais/rli-public-set on Hugging Face). Licence: Apache-2.0.",
+      "source_url": "https://huggingface.co/datasets/cais/rli-public-set"
+     },
+     "task": "Jewelry design: remodel a provided ring design with a marquise-cut diamond instead of an emerald-cut one, and deliver a 3D model plus four rendered images.",
+     "task_detail": "Create a modified version of the provided ring design by replacing the emerald-cut diamond with a marquise-cut diamond. Using the reference photo, render images of the ring with this new diamond shape while maintaining all other design elements. Input: one reference image with the ring's weight, size and other specifications. Deliverables: a .3dm 3D model and four JPEG renders of at least 1280x1280 pixels (rose gold and yellow gold, front and side-angle views).",
+     "reference": "The freelancer's accepted deliverable: one .3dm model file and four 1280x1280 renders (rose gold and yellow gold, two views each).",
+     "reference_baseline": "Done by a human freelancer: cost $50, completion time 9 hours, as recorded in the public set's metadata.csv (costs and times are self-reported by the professionals).",
+     "solvable": "Yes: a human freelancer delivered it for $50 in 9 hours.",
+     "solvable_detail": "The human deliverable is published in the dataset and is the standard the AI's work is judged against, so the reference is attainable by definition.",
+     "solvable_url": "https://huggingface.co/datasets/cais/rli-public-set",
+     "detail": "Current models' overall automation rates are 41.25% (Claude Fable 5.2), 21.25% (Claude Opus 5.5) and 20.83% (GPT-6 Astra); no verdict by project is published, so it is not known how any current model did on this public project.",
+     "source_url": "https://huggingface.co/datasets/cais/rli-public-set",
+     "task_url": "https://huggingface.co/datasets/cais/rli-public-set/blob/main/public_001/project/brief.md"
+    },
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": null,
+     "task": "Product animation: produce five short 3D animations that show off the features of a new earbud design and its charging case, plus the 3D models.",
+     "task_detail": "We need high-quality animations to showcase the features of a new earbuds design and the case. Create high-quality 3D product demonstration videos that effectively communicates the key features and benefits of the earbuds. We need 5 short, engaging animations to be used in marketing materials. Key features to show: silicone tips, a stem that swaps out for a replaceable battery, a sleek charging case and an L/R indicator decal. Inputs: five product photos. Deliverables: five MP4 clips and 3D models of the earbuds and case.",
+     "reference": "The freelancer's accepted deliverable: five feature clips and the 3D models (files in the public dataset).",
+     "reference_baseline": "Done by a human freelancer: cost $500, completion time 60 hours (public set metadata.csv, self-reported).",
+     "solvable": "Yes: a human freelancer delivered it for $500 in 60 hours.",
+     "solvable_detail": "As for every RLI project, a paid human deliverable exists and defines success.",
+     "solvable_url": "https://huggingface.co/datasets/cais/rli-public-set",
+     "detail": "Current models' overall automation rates are 41.25% (Claude Fable 5.2), 21.25% (Claude Opus 5.5) and 20.83% (GPT-6 Astra); no verdict by project is published, so it is not known how any current model did on this public project.",
+     "source_url": "https://huggingface.co/datasets/cais/rli-public-set",
+     "task_url": "https://huggingface.co/datasets/cais/rli-public-set/blob/main/public_004/project/brief.md"
+    }
+   ]
   },
   {
    "id": "posttrainbench",
@@ -28,7 +121,10 @@
      "date": "2026-11",
      "source_url": "https://posttrainbench.com/traces/run.html?id=claude_openrouter_max_claude-fable-5-2_1m__10h_run2__aime2025_google_gemma-3-4b-pt_17907072",
      "task_url": "https://posttrainbench.com/",
-     "image": null
+     "image": null,
+     "solvable": "Partly: Google's instruct model scores 10%; no agent has exceeded 2.7% within the 10-hour limit.",
+     "solvable_detail": "The official Gemma-3-4B-IT scores 10.0% on this cell of the v1.2 leaderboard, with far more training than the task allows. The best agent result on the cell is 2.67% (Claude Fable 5.1); Fable 5.2, Opus 5.5 and Gemini 4 Carbon are at or below 1.0%. Nobody, human or model, has shown 10% is reachable in 10 hours on one GPU, and 100% is not a meaningful target for a 4B model.",
+     "solvable_url": "https://posttrainbench.com/"
     },
     {
      "task": "Fine-tune the small base model Qwen3-1.7B so that it scores as high as possible on HumanEval (Python coding problems), in 10 hours on one H100 GPU, without training on anything derived from the test problems.",
@@ -44,10 +140,17 @@
      "date": "2026-11",
      "source_url": "https://posttrainbench.com/traces/run.html?id=claude_openrouter_max_claude-fable-5-2_1m__10h_run1__humaneval_Qwen_Qwen3-1.7B-Base_17906589",
      "task_url": "https://posttrainbench.com/",
-     "image": null
+     "image": null,
+     "solvable": "Yes: the clean second run scored 72.6%, above the official instruct model's 68.9%.",
+     "solvable_detail": "Several agents beat the official Qwen3-1.7B instruct model (68.9%) on this cell without being flagged: Fable 5.1 74.4%, Opus 5.5 72.9%, GPT-6 Astra 70.7%. Fable 5.2's own second run was clean at 72.6%, so the task is solvable within the rules.",
+     "solvable_url": "https://posttrainbench.com/"
     }
    ],
-   "no_rows_reason": null
+   "no_rows_reason": null,
+   "ceiling": {
+    "text": "100% is not a meaningful target: it would require small 1.7-4B models to answer every question on AIME, GPQA and the other test sets. The only reference point is the official instruct versions of the same models, which average 48.4% under the v1.2 leaderboard weighting (computed here from the site's per-benchmark data; 51.1% in the original paper); the best agents are at 44.6%, i.e. about 92% of that reference. ECI nevertheless uses score_ceiling 1.0 (random_baseline 0).",
+    "url": "https://posttrainbench.com/"
+   }
   },
   {
    "id": "frontiercode",
@@ -66,7 +169,10 @@
      "date": "2026-10",
      "source_url": "https://cognition.com/blog/frontier-code-2.0#sample-task-1",
      "task_url": "https://cognition.com/frontiercode",
-     "image": null
+     "image": null,
+     "solvable": "Presumably yes: a maintainer-written reference solution exists; no passing model run is shown for this task.",
+     "solvable_detail": "FrontierCode tasks come with a reference solution, and the 1.0 methodology says the author must write four distinct solutions that target a range of scores from 0 to 100%. The reference solution's score on this specific task is not published, and the only model results shown for it are Opus 5.5's 0/5 at every effort level.",
+     "solvable_url": "https://cognition.com/blog/frontier-code"
     },
     {
      "task": "In PostHog's open-source Android analytics SDK, fix a startup race in which two modules send cached and new events at the same time, so events reach the server out of order.",
@@ -82,10 +188,17 @@
      "date": "2026-10",
      "source_url": "https://cognition.com/blog/frontier-code-2.0",
      "task_url": "https://cognition.com/frontiercode",
-     "image": null
+     "image": null,
+     "solvable": "Yes: GPT-6 Astra itself passed 5/5 runs at low reasoning effort.",
+     "solvable_detail": "Cognition's walkthrough shows the same model passing all five runs at low effort with a smaller change, and failing mostly at higher effort. A maintainer-written reference solution also exists.",
+     "solvable_url": "https://cognition.com/blog/frontier-code-2.0"
     }
    ],
-   "no_rows_reason": null
+   "no_rows_reason": null,
+   "ceiling": {
+    "text": "100% should be attainable in principle: each task has a maintainer-written reference solution, and authors must write calibration solutions spanning 0 to 100%. No human pass rate or reference-solution score on the full suite is published, and Epoch's review rates FrontierCode 'Not enough info', so the practical ceiling is undocumented. ECI score_ceiling 1.0, random_baseline 0.",
+    "url": "https://cognition.com/blog/frontier-code"
+   }
   },
   {
    "id": "frontierswe",
@@ -104,7 +217,10 @@
      "date": "2026-11",
      "source_url": "https://www.frontierswe.com/traces/inference-system-optimization-v2__BQkXqsr",
      "task_url": "https://www.frontierswe.com/tasks/inference-system-optimization-v2",
-     "image": null
+     "image": null,
+     "solvable": "Unknown: no human reference solution; best single run 0.55, best model mean 0.11.",
+     "solvable_detail": "The score is 1.0 only at a 2.0x speed-up on both sequential and concurrent workloads over a configuration the authors describe as already well tuned. No human or reference solution reaching that is published. The highest run found is one Claude Fable 5.2 run at 0.549; every model's mean is 0.11 or lower.",
+     "solvable_url": "https://www.frontierswe.com/tasks/inference-system-optimization-v2"
     },
     {
      "task": "Write a bot that drives a racing car around tracks it has never seen, using only the forward camera image (no speedometer, no track sensors).",
@@ -120,10 +236,17 @@
      "date": "2026-11",
      "source_url": "https://www.frontierswe.com/traces/torcs-ai-bot__GCxuA3z",
      "task_url": "https://www.frontierswe.com/tasks/torcs-ai-bot",
-     "image": null
+     "image": null,
+     "solvable": "Yes for humans: a skilled human lap is the 0.8 anchor; best Fable 5.2 run 0.44.",
+     "solvable_detail": "The reward anchors are measured results: a 90-second human lap on corkscrew (0.8), a published imitation-learning bot (0.6) and the task's own heuristic bot (0.4), so scores of 0.4 to 0.8 have been achieved by existing systems and people. Whether 1.0 ('superhuman pace') is reachable from camera pixels alone is not established.",
+     "solvable_url": "https://www.frontierswe.com/tasks/torcs-ai-bot"
     }
    ],
-   "no_rows_reason": null
+   "no_rows_reason": null,
+   "ceiling": {
+    "text": "Not established that 100% is attainable. Each task's 0-1 reward has its own scale; some have human or reference anchors (for example a skilled human lap is 0.8 on the TORCS task) and others cap at targets no one has shown reachable (a 2.0x speed-up on the SGLang task). Taking the best mean score any model has on each of the 34 tasks gives an average of 0.76: 15 tasks have a best of 0.95 or more and 7 have a best below 0.5. ECI score_ceiling 1.0, random_baseline 0.",
+    "url": "https://www.frontierswe.com/"
+   }
   },
   {
    "id": "weirdml-v3",
@@ -142,7 +265,10 @@
      "date": "2026-11",
      "source_url": "https://htihle.github.io/weirdml.html",
      "task_url": "https://htihle.github.io/weirdml_tasks.html",
-     "image": null
+     "image": null,
+     "solvable": "Unknown: no human or reference-solution score is published; best single run by any model 0.37.",
+     "solvable_detail": "The task's raw metric is mapped to the 0-1 score with floor 0.0 and ceiling 1.0, i.e. full marks would need essentially perfect detection and classification. In 145 valid runs across all models the best single run reached 0.366 (Claude Fable 5.2). Whether a much higher score is attainable from these degraded, unlabelled images has not been shown by anyone.",
+     "solvable_url": "https://htihle.github.io/data/weirdml_v3_results.json"
     },
     {
      "task": "Telescope Pipeline: turn raw data from a simulated radio telescope into a calibrated map of the sky, without ever being shown a score.",
@@ -158,15 +284,47 @@
      "date": "2026-11",
      "source_url": "https://htihle.github.io/weirdml.html",
      "task_url": "https://htihle.github.io/weirdml_tasks.html",
-     "image": null
+     "image": null,
+     "solvable": "Unknown: no reference pipeline score is published; best single run by any model 0.54.",
+     "solvable_detail": "Floor 0.0 and ceiling 1.0 on the raw map-quality metric. In 155 valid runs across all models the best single run reached 0.539 (Claude Fable 5.2). The true sky is known to the benchmark, but the score of an expert-written pipeline on the same noisy data is not published, so the practical ceiling is unknown.",
+     "solvable_url": "https://htihle.github.io/data/weirdml_v3_results.json"
     }
    ],
-   "no_rows_reason": null
+   "no_rows_reason": null,
+   "ceiling": {
+    "text": "Not known whether 100% is attainable. Each task's raw metric is rescaled by an author-set floor and ceiling (ceiling 1.0 on nine tasks, 0.9 on Mystery Box and Scan Stitch), no human, oracle or reference-solution score is published, and no statement by the author on v3 headroom was found. Across all 2,334 valid runs only one task (Shattered Prior) has ever been scored 1.0; the best single run reached 0.37 on Ship Detect, 0.32 on Ship Tune, 0.54 on Telescope Pipeline, 0.44 on Mystery Box and 0.04 on Mystery Box without hints, while six other configurations have runs at 0.92-0.99. Epoch's ECI uses the 'Max performance' (final best) column with score_ceiling 0.9 and random_baseline 0, with no published justification for 0.9; the best model's final-best mean is 0.65 (Claude Fable 5.2). The 'official' score additionally rewards speed, so it stays below the final-best score by construction. For the older WeirdML v2, Epoch's review estimated per-task ceilings of 80-100%, about 95% on average; no such estimate exists for v3.",
+    "url": "https://htihle.github.io/data/weirdml_v3_results.json"
+   }
   },
   {
    "id": "apex-agents",
    "rows": [],
-   "no_rows_reason": "Only aggregate Pass@1 and mean scores are published for 2026 models; the one task-level failure analysis is the January 2026 paper on models that are now far behind, and there is no public per-task result or transcript for Gemini 4 Carbon, Fable 5.2 or Opus 5.5."
+   "no_rows_reason": "Only aggregate Pass@1 and mean scores are published for 2026 models; the one task-level failure analysis is the January 2026 paper on models that are now far behind, and there is no public per-task result or transcript for Gemini 4 Carbon, Fable 5.2 or Opus 5.5.",
+   "ceiling": {
+    "text": "100% appears attainable: experts wrote a gold output for every task, the judge graded all 480 gold outputs as meeting every criterion, and independent experts re-did 20% of tasks from scratch to check they are completable. The judge model agrees with human labels 98.5% of the time, so differences of about a point are noise. ECI score_ceiling 1.0, random_baseline 0.",
+    "url": "https://arxiv.org/abs/2601.14242"
+   },
+   "samples": [
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": null,
+     "task": "Investment-banking example: report the price-to-earnings ratio for the company KVUE, using the share price implied by a DCF model and the diluted EPS in the annual financials, both found in the project's files.",
+     "task_detail": "The only example prompt printed in the paper (chosen there for brevity): Reply back to me with the P/E ratio for KVUE, rounded to two decimal points. Use the implied share price in the DCF model and diluted EPS from the annual financials dated 12/23/2025. The agent works inside a simulated project 'world' with the files and applications (spreadsheets, documents, PDFs, mail, chat, code execution) and must reply in the console; runs are cut off at 250 steps.",
+     "reference": "A single number, graded against an expert rubric. The expected value is not printed in the paper, and the dataset holding the gold outputs is access-gated on Hugging Face.",
+     "reference_baseline": "Tasks, rubrics and gold outputs were written by experienced professionals. In a baselining study independent experts re-did 20% of tasks (96) from scratch; the paper reports the measured time on those as 1.37 hours on average against an estimate of 1.70 hours. No figure for this task alone.",
+     "solvable": "Yes in general: experts produced a gold output for every task; this task's answer is not public.",
+     "solvable_detail": "The paper states that gold outputs exist for all 480 tasks and that the judge graded all of them as meeting their criteria, and independent experts completed a 20% sample from scratch. Only one example prompt is public without credentials, so a second sample cannot be given.",
+     "solvable_url": "https://arxiv.org/abs/2601.14242",
+     "detail": "Current models pass 73-84% of tasks on a single attempt (Gemini 4 Carbon 84.2%, Claude Fable 5.2 80.1%, Claude Opus 5.5 73.5%); no per-task results are published for them.",
+     "source_url": "https://arxiv.org/abs/2601.14242",
+     "task_url": "https://arxiv.org/abs/2601.14242"
+    }
+   ]
   },
   {
    "id": "osworld-2",
@@ -185,7 +343,10 @@
      "date": "2026-09",
      "source_url": "https://epoch.ai/benchmarks/osworld-2-1/review",
      "task_url": "https://osworld-v2.xlang.ai/",
-     "image": null
+     "image": null,
+     "solvable": "Yes, and the model did it; a mismatch in the answer key made the grader give 0%.",
+     "solvable_detail": "Epoch's audit found the task's answer key names an item differently from the chat message the agent must copy, so a correct submission is rejected: An LLM judge compares each row with the answer key and rejects the longer name. Epoch classes 100% of this task's score as affected by a false negative.",
+     "solvable_url": "https://epoch.ai/benchmarks/osworld-2-1/review"
     },
     {
      "task": "Help a student fill out a DS-2019 application for a J-1 visa from documents on the desktop, checking everything before submitting.",
@@ -201,10 +362,17 @@
      "date": "2026-09",
      "source_url": "https://epoch.ai/benchmarks/osworld-2-1/review",
      "task_url": "https://osworld-v2.xlang.ai/",
-     "image": null
+     "image": null,
+     "solvable": "No for this harness: the task requires asking the user, which the model's harness cannot do.",
+     "solvable_detail": "The reference trajectory in the OSWorld 2.0 paper pauses and asks the user, so the task is solvable where the ask-user action exists. Epoch counts the task as impossible for the GPT-6 Astra runs it inspected because that harness has no way to ask.",
+     "solvable_url": "https://epoch.ai/benchmarks/osworld-2-1/review"
     }
    ],
-   "no_rows_reason": null
+   "no_rows_reason": null,
+   "ceiling": {
+    "text": "100% is not attainable as graded. Epoch's audit of v2.1 (50 of 108 tasks) found errors in 36 tasks that could affect up to 50.4% of the audited score: 4 tasks or checkpoints impossible as written, 24 cases of correct work not credited and 12 of incorrect work credited. Epoch estimates GPT-6 Astra lost about 20.8% of its score on audited tasks to wrong grading and suggests a score around 80% would mean effective saturation. ECI still uses score_ceiling 1.0 (random_baseline 0).",
+    "url": "https://epoch.ai/benchmarks/osworld-2-1/review"
+   }
   },
   {
    "id": "spireclimb",
@@ -228,7 +396,10 @@
       "caption": "GPT-6 Astra's Slay the Spire 2 Ascension 10 win rate per character (15 runs each, 90% confidence intervals): Regent 53%, Ironclad 40%, Silent 33%, Defect 33%, Necrobinder 13%.",
       "credit": "Epoch AI, 'AI systems are improving rapidly at Slay the Spire and its sequel' (2026). Licence: CC BY (marked on the chart; Epoch's site states Creative Commons Attribution).",
       "source_url": "https://epoch.ai/publications/ai-systems-are-improving-rapidly-at-slay-the-spire-and-its-sequel"
-     }
+     },
+     "solvable": "Yes: top humans win an estimated 95% at this setting (not Necrobinder-specific); Astra won 2 of 15.",
+     "solvable_detail": "Epoch's human estimate comes from public player data, including a recorded 53-win streak rotating between characters. A 100% win rate is not expected even of the best humans because the game is random, so the practical ceiling is about 95%.",
+     "solvable_url": "https://epoch.ai/publications/ai-systems-are-improving-rapidly-at-slay-the-spire-and-its-sequel"
     },
     {
      "task": "Win a full run of the original Slay the Spire at its hardest setting (Ascension 20, including the optional final boss, the Heart), using only screenshots, mouse and keyboard.",
@@ -244,15 +415,70 @@
      "date": "2026-11",
      "source_url": "https://epoch.ai/benchmarks/spireclimb",
      "task_url": "https://epoch.ai/publications/ai-systems-are-improving-rapidly-at-slay-the-spire-and-its-sequel",
-     "image": null
+     "image": null,
+     "solvable": "Yes: the top human player wins roughly 85% of runs; best model 33%.",
+     "solvable_detail": "Epoch cites the public statistics of the player XecnaR, 80% to 95% depending on character, and puts the top-human line at 85%. Full marks (100%) are not attained even by that player.",
+     "solvable_url": "https://epoch.ai/publications/ai-systems-are-improving-rapidly-at-slay-the-spire-and-its-sequel"
     }
    ],
-   "no_rows_reason": null
+   "no_rows_reason": null,
+   "ceiling": {
+    "text": "100% is not a realistic target: the games are random and the best human players win roughly 85% of runs (Slay the Spire 1, Ascension 20 Heart) and about 95% (Slay the Spire 2, Ascension 10), so the practical ceiling for the averaged score is about 90%. ECI uses score_ceiling 1.0 and random_baseline 0.",
+    "url": "https://epoch.ai/benchmarks/spireclimb"
+   }
   },
   {
    "id": "chess-puzzles",
    "rows": [],
-   "no_rows_reason": "All 100 positions and answers are public, but which puzzles each model missed is only in Epoch's transcript viewer, which blocks scripted access, and the October 2026 audit reports only whole-benchmark figures (for example 48 of 100 Claude Opus 5.5 attempts blocked by a content filter on version 1), so no specific failed puzzle can be sourced."
+   "no_rows_reason": "All 100 positions and answers are public, but which puzzles each model missed is only in Epoch's transcript viewer, which blocks scripted access, and the October 2026 audit reports only whole-benchmark figures (for example 48 of 100 Claude Opus 5.5 attempts blocked by a content filter on version 1), so no specific failed puzzle can be sourced.",
+   "ceiling": {
+    "text": "100% is attainable by construction: every answer is the chess engine's single best move, and an independent audit confirmed all 100 answers with a newer engine version. Humans are well below that: the two best of five players (ratings 2400 and 2035) each got 75% on a 20-puzzle sample, the mean was 57%. ECI score_ceiling 1.0, random_baseline 0.0496.",
+    "url": "https://epoch.ai/benchmarks/chess-puzzles"
+   },
+   "samples": [
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": null,
+     "task": "Find the single best move for Black in this position (puzzle 1 of 100 in the public file).",
+     "task_detail": "Prompt: Below is a FEN string representing the state of a chess game. Analyze the position and determine the best next move for the player whose turn it is. The model may use up to 1,000,000 output tokens and submits one move as four characters (from-square, to-square). Position (FEN): 6k1/3R4/2N3p1/PpPp4/1P1r4/5r2/6K1/8 b - - 3 56",
+     "reference": "Best move: d4d3 (from d4 to d3).",
+     "reference_baseline": "The answer is Stockfish's single best move (depth 18); positions are kept only if the best move is clearly better than the second best. In Epoch's human baseline five players rated 1700-2400 scored 40-75% on a 20-puzzle sample, taking 2 to 7 minutes per puzzle. No solve rate or difficulty rating for this individual puzzle is published.",
+     "solvable": "Yes: the engine's best move is the answer by construction; top human players scored 75% on a sample.",
+     "solvable_detail": "Engine-derived answer; an independent audit re-checked the answer key: All 100 of the provided gold answers remained the best move under independent testing using Stockfish 19 at depth 18.",
+     "solvable_url": "https://generality.org/blog/posts/chess-puzzles-audit/",
+     "detail": "Current models find the engine's move on 67-79% of the 100 puzzles (Claude Fable 5.2 79%, Gemini 4 Carbon 78%, GPT-6 Astra 76%, Claude Opus 5.5 67%); results by puzzle are only in Epoch's log viewer, which could not be read.",
+     "source_url": "https://epoch.ai/benchmarks/chess-puzzles",
+     "task_url": "https://github.com/epoch-research/chess-puzzles-mirror/blob/main/bench/task/chess_puzzles/puzzles.csv",
+     "fen": "6k1/3R4/2N3p1/PpPp4/1P1r4/5r2/6K1/8 b - - 3 56",
+     "best_move": "d4d3"
+    },
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": null,
+     "task": "Find the single best move for Black in this position (puzzle 3 of 100 in the public file).",
+     "task_detail": "Prompt: Below is a FEN string representing the state of a chess game. Analyze the position and determine the best next move for the player whose turn it is. The model may use up to 1,000,000 output tokens and submits one move as four characters (from-square, to-square). Position (FEN): 3rk1r1/1pq5/1n3p1p/p1b4P/P1PNPPb1/3QB1P1/R4KB1/7R b - - 4 27",
+     "reference": "Best move: g8g7 (from g8 to g7).",
+     "reference_baseline": "The answer is Stockfish's single best move (depth 18); positions are kept only if the best move is clearly better than the second best. In Epoch's human baseline five players rated 1700-2400 scored 40-75% on a 20-puzzle sample, taking 2 to 7 minutes per puzzle. No solve rate or difficulty rating for this individual puzzle is published.",
+     "solvable": "Yes: the engine's best move is the answer by construction; top human players scored 75% on a sample.",
+     "solvable_detail": "Engine-derived answer; an independent audit re-checked the answer key: All 100 of the provided gold answers remained the best move under independent testing using Stockfish 19 at depth 18.",
+     "solvable_url": "https://generality.org/blog/posts/chess-puzzles-audit/",
+     "detail": "Current models find the engine's move on 67-79% of the 100 puzzles (Claude Fable 5.2 79%, Gemini 4 Carbon 78%, GPT-6 Astra 76%, Claude Opus 5.5 67%); results by puzzle are only in Epoch's log viewer, which could not be read.",
+     "source_url": "https://epoch.ai/benchmarks/chess-puzzles",
+     "task_url": "https://github.com/epoch-research/chess-puzzles-mirror/blob/main/bench/task/chess_puzzles/puzzles.csv",
+     "fen": "3rk1r1/1pq5/1n3p1p/p1b4P/P1PNPPb1/3QB1P1/R4KB1/7R b - - 4 27",
+     "best_move": "g8g7"
+    }
+   ]
   },
   {
    "id": "balrog",
@@ -271,7 +497,10 @@
      "date": "2026-09",
      "source_url": "https://balrogai.com/",
      "task_url": "https://arxiv.org/abs/2411.13543",
-     "image": null
+     "image": null,
+     "solvable": "Unknown under benchmark limits: NetHack is winnable by expert humans, but no human progress score is published.",
+     "solvable_detail": "The paper says the game takes human players years to master and that a winning game can involve hundreds of thousands of steps. It reports no human result on its progress metric, so whether 100% is reachable within the benchmark's episode limits is not established. Best model: 13.2%.",
+     "solvable_url": "https://arxiv.org/abs/2411.13543"
     },
     {
      "task": "Solve MiniHack tasks: small dungeon challenges built on NetHack (mazes, corridors with monsters, box-pushing puzzles and multi-step quests).",
@@ -287,15 +516,66 @@
      "date": "2026-09",
      "source_url": "https://balrogai.com/",
      "task_url": "https://arxiv.org/abs/2411.13543",
-     "image": null
+     "image": null,
+     "solvable": "Unknown: no human baseline is published; best model reaches 65% progress.",
+     "solvable_detail": "The MiniHack tasks are designed to be completable, but the BALROG paper and leaderboard report no human or reference-agent score on the selected tasks, so the attainable ceiling is not documented.",
+     "solvable_url": "https://arxiv.org/abs/2411.13543"
     }
    ],
-   "no_rows_reason": null
+   "no_rows_reason": null,
+   "ceiling": {
+    "text": "Unknown. The score is average 'progress' over six games; four are solved or nearly solved by current models, but no human or reference-agent score is published for any of them, and NetHack progress of 100% (winning the game) has not been approached by any system on the leaderboard (best 13.2%). ECI score_ceiling 1.0, random_baseline 0.",
+    "url": "https://balrogai.com/"
+   }
   },
   {
    "id": "lmca",
    "rows": [],
-   "no_rows_reason": "The dataset is private and only overall correlation scores are published for 2026 models; the single worked model failure in the paper is from Claude Opus 4, a 2025 model, which is outside the allowed window."
+   "no_rows_reason": "The dataset is private and only overall correlation scores are published for 2026 models; the single worked model failure in the paper is from Claude Opus 4, a 2025 model, which is outside the allowed window.",
+   "ceiling": {
+    "text": "100 is not attainable: the score is agreement with expert ratings, and the experts do not fully agree with each other. The authors estimate ceiling performance at a correlation of about 0.85 (a score of 85), from arguments rated independently by four to six people; Epoch's ECI uses that as score_ceiling (0.85, random_baseline 0). The best model is at 70.6, i.e. 83% of the ceiling.",
+    "url": "https://epoch.ai/benchmarks/lmca"
+   },
+   "samples": [
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": null,
+     "task": "Rate the quality of an objection to a short philosophical argument that claims to derive an 'ought' from an 'is' (a weak objection).",
+     "task_detail": "Position text: Clearly, one can infer “ought” from “is”, thus bridging the is/ought gap: (1) “Bertie morally ought to marry Madeline” is one of Aunt Dahlia’s beliefs. (2) All of Aunt Dahlia’s beliefs are true. (3) Therefore, Bertie morally ought to marry Madeline. Argument to rate: While the argument is logically valid (3 follows from 1 and 2), it does not bridge from “is” to ought. After all, Premise 1 already contains an “ought”. The model must give 0-1 ratings for centrality, strength, correctness, clarity, dead weight, single issue and an overall score.",
+     "reference": "Expert overall ratings: 0.00, 0.00 and 0.05 (strength 0.00, 0.00, 0.10; correctness 0.20, 0.00, 0.00; centrality and clarity 1.00 from all three).",
+     "reference_baseline": "Rated independently by three of the benchmark's expert raters (initials CO, EC, CN in the paper's Table 2) against a written rubric.",
+     "solvable": "Yes, as far as agreement goes: three experts rated it within 0.05 of each other.",
+     "solvable_detail": "On this item the experts agree closely, so matching them is attainable. Across the dataset the authors estimate the ceiling at a correlation of about 0.85 because raters do not always agree.",
+     "solvable_url": "https://arxiv.org/abs/2607.27499",
+     "detail": "Current models' ratings correlate about 0.68-0.71 with the experts' (Claude Fable 5.2 70.6, Claude Opus 5.5 68.2) against an estimated ceiling of 0.85; no per-item ratings by current models are published.",
+     "source_url": "https://arxiv.org/abs/2607.27499",
+     "task_url": "https://arxiv.org/abs/2607.27499"
+    },
+    {
+     "agent_model": null,
+     "agent_score": null,
+     "agent_answer": null,
+     "failure": null,
+     "quote": null,
+     "date": null,
+     "image": null,
+     "task": "Rate the quality of a second objection to the same 'ought from is' argument (a strong objection).",
+     "task_detail": "Same position text as the previous sample. Argument to rate: While the argument is logically valid (3 follows from 1 and 2), it does not bridge from “is” to ought. That’s because “All of Aunt Dahlia’s beliefs are true” is a claim about “ought”, if we interpret “ought” in the way needed for the argument to go through. (The argument continues for three more sentences in the paper.)",
+     "reference": "Expert overall ratings: 0.95, 1.00 and 1.00 (strength and correctness 1.00 from all three).",
+     "reference_baseline": "Rated independently by three of the benchmark's expert raters (initials CO, EC, CN in the paper's Table 2) against a written rubric.",
+     "solvable": "Yes: three experts rated it 0.95-1.00.",
+     "solvable_detail": "The two samples together show what the benchmark tests: telling a decisive objection from a superficially similar one that the experts rate near zero.",
+     "solvable_url": "https://arxiv.org/abs/2607.27499",
+     "detail": "Current models' ratings correlate about 0.68-0.71 with the experts' (Claude Fable 5.2 70.6, Claude Opus 5.5 68.2) against an estimated ceiling of 0.85; no per-item ratings by current models are published.",
+     "source_url": "https://arxiv.org/abs/2607.27499",
+     "task_url": "https://arxiv.org/abs/2607.27499"
+    }
+   ]
   }
  ]
 }

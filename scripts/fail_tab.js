@@ -31,7 +31,7 @@ function buildFail(){
   h.title=(b.eci_names||[]).map(n=>{const x=wMax(n);return x?short(n)+': best score '+(x.s*100).toFixed(0)+'% ('+x.m+')':''}).filter(Boolean).join('; ');
   c.append(h);if(b.human&&!(b.ceiling&&b.ceiling.text)){const wp=wEl('p','wwhat');wp.append(wEl('b',null,'Humans: '),b.human);c.append(wp)}
   const rows=(b.rows&&b.rows.length?b.rows:b.samples||[]).slice(0,2);
-  if(b.ceiling&&b.ceiling.text){const cp=wEl('p','wwhat');cp.append(wEl('b',null,'Is 100% attainable? '),b.ceiling.text+' ',wLink(b.ceiling.url,'['+wHost(b.ceiling.url)+']'));c.append(cp)}
+  if(b.ceiling&&b.ceiling.text){const t=b.ceiling.text,f=wFirst(t),d=wEl('details','wceil'),sm=wEl('summary');sm.append(wEl('b',null,'Is 100% attainable? '),f);const rest=wEl('p');rest.append(t.slice(f.length).trim()+' ',wLink(b.ceiling.url,'['+wHost(b.ceiling.url)+']'));d.append(sm,rest);c.append(d)}
   if(rows.length){
    const tb=wEl('table','wt'),hd=wEl('thead'),hr=wEl('tr');['Task','Reference answer','Is it solvable?','Agent answer and score'].forEach(t=>hr.append(wEl('th',null,t)));hd.append(hr);const body=wEl('tbody');tb.append(hd,body);
    rows.forEach((r,j)=>{const key=b.id+'/'+j,tr=wEl('tr','wrow'),dr=wEl('tr','wdet'),dd=wEl('td');dd.colSpan=4;dr.append(dd);
