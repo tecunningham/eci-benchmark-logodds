@@ -74,24 +74,45 @@ table.xt tr.cur td{background:var(--band);font-weight:600}
 table.xt tr[data-x]{cursor:pointer}
 table.xt .sw{display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle}
 table.xt button{font:inherit;font-size:12px;border:0;background:none;color:var(--muted);cursor:pointer;padding:0 4px}
-#wbody{max-width:980px}
+#wbody{max-width:1180px}
 #wbody h2{font:500 1.3rem/1.2 "Newsreader",Georgia,serif;margin:0 0 2px}
-#wbody h2.wgroup{font:600 13px/1.3 "Public Sans",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 8px}
+#wbody h2.wgroup{font:600 13px/1.3 "Public Sans",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:26px 0 8px}
 #wbody h3{font-size:12.5px;font-weight:600;color:var(--muted);margin:8px 0 2px}
-#wbody p{margin:0 0 4px}
-.wb{border-top:1px solid var(--line);padding:10px 0 8px;font-size:14px}
-.wwhat,.wsc,.wmodel,.wjump,.wrefs{color:var(--muted)}
+#wbody p{margin:0 0 6px}
+.wb{border-top:1px solid var(--line);padding:12px 0 10px;font-size:14px}
+.wwhat,.wsub,.wjump,.wrefs,.wmodes{color:var(--muted)}
+.wwhat,.wrefs,.wmodes{font-size:13px}
+.wsub{font-size:12.5px}
 .wmax{font:400 14px "Public Sans",system-ui,sans-serif;color:var(--muted)}
-.wwhat,.wsc,.wrefs{font-size:13px}
-.wsc b{color:var(--ink);font-variant-numeric:tabular-nums}
-.wnote{border-left:3px solid var(--line);padding-left:10px;margin:6px 0!important}
-#wbody ul{margin:0;padding-left:18px}
-#wbody li{margin:3px 0}
-.wtask{font-style:italic}
-.wfail{color:var(--ink)}
+.wnote{border-left:3px solid var(--line);padding-left:10px;margin:6px 0!important;max-width:90ch}
+table.wt{width:100%;border-collapse:collapse;table-layout:fixed;margin:6px 0 4px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+table.wt th{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:6px 12px;border-bottom:1px solid var(--line)}
+table.wt th:nth-child(1){width:30%}table.wt th:nth-child(2){width:28%}
+table.wt td{vertical-align:top;padding:9px 12px;border-top:1px solid var(--grid);overflow-wrap:anywhere}
+table.wt td>*{display:block}
+table.wt tr.wrow{cursor:pointer}
+table.wt tr.wrow:hover td,table.wt tr.wrow.open td{background:var(--band)}
+table.wt td .wscore{display:inline;color:var(--ink);font-size:12.5px}
+table.wt td .wsub:first-child{display:inline}
+.wfail{color:#b3261e;margin:3px 0 2px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wfail{color:#ff8a80}}
+:root[data-theme="dark"] .wfail{color:#ff8a80}
+.wblock{margin:3px 0 2px}
+.wmore{font:inherit;font-size:12px;margin-top:6px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--accent);cursor:pointer;width:max-content}
+.wthumb{max-width:100%;max-height:150px;margin-top:6px;border-radius:6px;border:1px solid var(--line)}
+tr.wdet td{background:var(--bg);font-size:13.5px;border-top:0!important;padding:4px 14px 12px!important}
+tr.wdet td p{max-width:100ch}
+tr.wdet blockquote{margin:4px 0 8px;padding:2px 0 2px 10px;border-left:3px solid var(--accent);max-width:95ch}
+tr.wdet figure{margin:8px 0}tr.wdet figcaption{font-size:12.5px;color:var(--muted)}
+.wbig{max-width:min(100%,720px);border-radius:6px;border:1px solid var(--line)}
+details.wmodes{margin-top:4px}details.wmodes summary{cursor:pointer}
+#wbody ul{margin:4px 0 0;padding-left:18px}#wbody li{margin:3px 0}
 #wbody li a,.wrefs a{font-size:12.5px;overflow-wrap:anywhere}
 .wjump{font-size:13.5px}
 .wrefs{margin-top:22px;border-top:1px solid var(--line);padding-top:6px}
+@media (max-width:700px){table.wt thead{display:none}table.wt,table.wt tbody,table.wt tr,table.wt td{display:block;width:auto}
+ table.wt td::before{content:attr(data-l);display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:2px}
+ table.wt tr.wrow{border-top:1px solid var(--line)}table.wt td{border-top:0;padding:6px 10px}tr.wdet td::before{content:none}tr.wdet[hidden]{display:none}}
 p.src{font-size:14px;color:var(--muted);margin:0 0 12px}
 a{color:var(--accent)}
 .notes{color:var(--muted);font-size:13.5px;max-width:82ch;margin-top:10px}

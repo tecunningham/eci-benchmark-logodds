@@ -11,7 +11,17 @@ for key, src in [("/*FITTAB*/", "fit_tab.js"), ("/*FAILTAB*/", "fail_tab.js")]: 
 fails = ROOT / "data" / "failures.json"   # notes for the fourth tab; "<" escaped so the text cannot close the script tag
 key = "/*FAILS*/"
 assert page.count(key) == 1, key
-page = page.replace(key, fails.read_text().replace("<", "\\u003c") if fails.exists() else "null")
+if fails.exists():
+    import json
+    F = json.loads(fails.read_text())
+    rows_file = ROOT / "data" / "failures_rows.json"   # two failure tasks per benchmark
+    R = {b["id"]: b for b in json.loads(rows_file.read_text())["benchmarks"]} if rows_file.exists() else {}
+    for b in F["benchmarks"]:
+        b["rows"] = R.get(b["id"], {}).get("rows", [])[:2]
+        b["no_rows_reason"] = R.get(b["id"], {}).get("no_rows_reason")
+    page = page.replace(key, json.dumps(F, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c"))
+else:
+    page = page.replace(key, "null")
 for key, src in [("/*DATA*/", ROOT / "data" / "eci_data.json"), ("/*CURVES*/", ROOT / "data" / "curve_fits.json"),
                  ("/*RNULL*/", ROOT / "data" / "resid_null.json"),
                  ("/*SOLVER*/", ROOT / "scripts" / "eci_fit.js"), ("/*FLEX*/", ROOT / "scripts" / "flex_fit.js")]:
