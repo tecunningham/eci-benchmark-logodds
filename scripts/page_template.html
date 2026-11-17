@@ -217,6 +217,8 @@ if(typeof Plotly==='undefined'){showFallback()}
 else try{
 const RAW=/*DATA*/,CF=/*CURVES*/,RN=/*RNULL*/,FAILS=/*FAILS*/;
 const sel=document.getElementById('hl'),FIT=RAW.fit,EPS=0.01;
+CF.variants=CF.variants.filter(v=>v.theta.length===RAW.models.length&&v.imp.length===RAW.b.length);
+const RNOK=RN.b.length===RAW.b.length&&RN.b.every((x,k)=>x.name===RAW.b[k].name);
 const lg01=p=>{p=Math.min(Math.max(p,EPS),1-EPS);return Math.log(p/(1-p))};
 const D={areas:RAW.areas,cols:RAW.cols},B=RAW.b.map((b,k)=>({k,name:b.name,rel:b.rel,area:b.area,p:b.p.map((q,j)=>[q[0],lg01(q[1]),q[1],j]),on:true,fr:[],all:[]}));
 // pub: Epoch's published values; e/lo/hi: current (published, or refit on the chosen benchmarks)
@@ -482,7 +484,7 @@ function buildResid(){
   const xs=pts.map(p=>p.x),xl=Math.min(...xs),xh=Math.max(...xs),sm=pts.length>4?smooth(xs,pts.map(p=>p.l-p.lz),xl,xh).filter(v=>v[1]!==null):[];
   const curv=sm.length?Math.sqrt(sm.reduce((t,v)=>t+v[1]**2,0)/sm.length):0;
   // null band and bootstrap p: only for Epoch's published fit, which is what was simulated
-  const nb=!LP.refit&&RN.b[d.k]&&RN.b[d.k].name===d.name?RN.b[d.k]:null;
+  const nb=!LP.refit&&RNOK?RN.b[d.k]:null;
   return{d,a,dd,own,pts,rl,rs,curv,xl,xh,nb,pv:nb?nb.p:null}}).filter(o=>o.pts.length);
  const ord=P.slice().sort(rSort==='n'?(u,v)=>v.pts.length-u.pts.length:rSort==='rmse'?(u,v)=>v.rl-u.rl:rSort==='p'?(u,v)=>(u.pv??1)-(v.pv??1)||v.curv-u.curv:rSort==='hard'?(u,v)=>v.dd-u.dd:rSort==='easy'?(u,v)=>u.dd-v.dd
   :(u,v)=>D.areas.indexOf(u.d.area)-D.areas.indexOf(v.d.area)||u.d.name.localeCompare(v.d.name));
@@ -535,7 +537,7 @@ function buildResid(){
  layout.annotations.push({xref:'paper',yref:'paper',x:0.5,y:0,yshift:-mb+2,yanchor:'bottom',showarrow:false,text:(LP.refit?'Refitted ECI':'ECI')+' (each model’s capability)',font:{size:11,color:mut}});
  Plotly.react('rplot',tr,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d','autoScale2d']});
  const what=LP.refit?'ECI refitted on the '+B.filter(d=>d.on).length+' benchmarks chosen below':'Epoch’s published ECI';
- const NS=RN.summary,showNull=!LP.refit;
+ const NS=RN.summary,showNull=!LP.refit&&RNOK;
  document.getElementById('lede').textContent='Does each benchmark follow a logistic in ECI? One panel per benchmark: every model’s score against its '+(LP.refit?'refitted ':'')+'ECI ('+ord.length+' benchmarks, '+ord.reduce((t,o)=>t+o.pts.length,0).toLocaleString()+' scores), '
   +(resid?'as the residual from the benchmark’s fitted logistic, '+(lo?'in log-odds':'in percentage points')+'.':'with the benchmark’s fitted logistic'+(lo?', which is a straight line in log-odds.':', an S-curve on this linear axis.'))
   +' The dotted line is the local average of the residuals'+(resid?'':', drawn around the curve')+'. '
