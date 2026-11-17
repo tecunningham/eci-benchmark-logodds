@@ -32,7 +32,7 @@ function buildFail(){
  // examples
  if(b.examples&&b.examples.length){kids.push(wEl('h3',null,'Example tasks'));
   b.examples.forEach(x=>{const c=wEl('div','wcard wex');
-   const t=wEl('p');t.append(wEl('b',null,x.task_verbatim?'Task (quoted). ':'Task (summarised). '),x.task||'');c.append(t);
+   const t=wEl('p');t.append(wEl('b',null,x.task_verbatim?'Task (quoted). ':'Task (summarised). '),(x.task||'').replace(/\\[()]/g,''));c.append(t);
    if(x.model||x.outcome){const o=wEl('p');o.append(wEl('b',null,(x.model||'Model')+': '),x.outcome||'');c.append(o)}
    if(x.model_answer)c.append(wEl('blockquote',null,x.model_answer));
    if(x.what_went_wrong){const w=wEl('p');w.append(wEl('b',null,'What went wrong. '),x.what_went_wrong);c.append(w)}
