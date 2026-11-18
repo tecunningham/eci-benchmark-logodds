@@ -6,9 +6,13 @@ const XLOSS={beta:'Beta likelihood',ls:'least squares on scores',ce:'cross-entro
 let XH=[],XCUR=null,xSeq=0,xBusy=false,xBench='';
 const xOff=()=>B.filter(d=>!d.on).map(d=>d.k);
 const xKey=()=>XK.map(k=>xc[k]).join('_')+'|'+xOff().join('.');
-const xFrontier=e=>frontier(M.map((o,i)=>({d:o.d,m:o.m,e:e[i],i,shown:o.shown})).filter(o=>o.shown&&Number.isFinite(o.e)));
+// cost cap: keep only models whose approximate cost per task (data/cost_index.json) is at or below the cap; models with no cost estimate drop out
+let xCap=0;
+const xCost=i=>COSTS&&COSTS.models[M[i].m]?COSTS.models[M[i].m][0]:NaN,xCostOK=i=>!xCap||xCost(i)<=xCap;
+const xFrontier=e=>frontier(M.map((o,i)=>({d:o.d,m:o.m,e:e[i],i,shown:o.shown})).filter(o=>o.shown&&Number.isFinite(o.e)&&xCostOK(o.i)));
 // growth of the frontier (straight lines between records, flat after the last) over the 12 months to the snapshot and the 12 before
 function xGrowth(F){
+ if(F.length<2)return{prev:NaN,last:NaN,ratio:NaN};
  const t=F.map(o=>+new Date(o.d)),v=F.map(o=>o.e);
  const at=x=>{if(x<=t[0])return v[0];for(let i=1;i<t.length;i++)if(x<=t[i])return v[i-1]+(v[i]-v[i-1])*(x-t[i-1])/(t[i]-t[i-1]);return v[v.length-1]};
  const e=+new Date(RAW.snapshot),a=at(e-730*DAY),b=at(e-365*DAY),c=at(e);return{prev:b-a,last:c-b,ratio:(c-b)/(b-a)}}
@@ -51,11 +55,14 @@ function drawFit(){
  document.getElementById('lede').textContent='';
  if(!h){document.getElementById('xtable').innerHTML='';return}
  const msg=document.getElementById('xmsg');
- if(msg.className!=='err')msg.textContent='Selected: '+xLabel(h)+'. Fitted in '+h.ms+' ms on '+h.r.n.toLocaleString()+' scores, '+h.r.nModels+' models and '+h.r.nBench+' benchmarks.';
+ if(msg.className!=='err'){const sh=M.map((o,i)=>i).filter(i=>M[i].shown),wc=sh.filter(i=>Number.isFinite(xCost(i)));
+  msg.textContent='Selected: '+xLabel(h)+'. Fitted in '+h.ms+' ms on '+h.r.n.toLocaleString()+' scores, '+h.r.nModels+' models and '+h.r.nBench+' benchmarks.'
+   +(xCap?' Cost cap '+xCap+': the frontiers and growth figures use only the '+wc.filter(i=>xCost(i)<=xCap).length+' models at or below it (of '+wc.length+' with a cost estimate; the other '+(sh.length-wc.length)+' models since GPT-4 have none and are left out).':'')}
  // comparison table
  const PRE=document.getElementById('xpre').checked?CF.variants.map((v,j)=>{const F=xFrontier(v.theta),dv=M.map((o,i)=>o.shown&&Number.isFinite(v.theta[i])?Math.abs(v.theta[i]-o.pub):NaN).filter(Number.isFinite).sort((a,b)=>a-b);
   return{v,F,g:xGrowth(F),med:dv[dv.length>>1],dash:['dot','dashdot','longdash'][j%3],css:['dotted','dashed','double'][j%3]}}):[];
- const PF=frontier(M.filter(o=>o.shown).map(o=>({d:o.d,m:o.m,e:o.pub}))),pg=xGrowth(PF),f1=v=>Number.isFinite(v)?v.toFixed(1):'–',top=F=>F.length?F[F.length-1]:null;
+ XH.forEach(x=>{x.F=xFrontier(x.r.eci);x.g=xGrowth(x.F)});
+ const PF=xFrontier(M.map(o=>o.pub)),pg=xGrowth(PF),f1=v=>Number.isFinite(v)?v.toFixed(1):'–',top=F=>F.length?F[F.length-1]:null;
  const row=(sw,name,rm,cv,g,tp,med,attr,x)=>'<tr'+attr+'><td>'+sw+'</td><td>'+name+'</td><td>'+rm+'</td><td>'+cv+'</td><td>'+f1(g.prev)+'</td><td>'+f1(g.last)+'</td><td>'+(Number.isFinite(g.ratio)?g.ratio.toFixed(2)+'×':'–')+'</td><td>'+(tp?tp.m.replace(/</g,'&lt;')+' '+tp.e.toFixed(1):'–')+'</td><td>'+med+'</td><td>'+x+'</td></tr>';
  document.getElementById('xtable').innerHTML='<thead><tr><th></th><th>Fit</th><th>In-sample RMSE<br>(score points)</th><th>Hold-out RMSE<br>(score points)</th><th>Frontier growth,<br>previous 12 months<br>(ECI points)</th><th>Frontier growth,<br>last 12 months<br>(ECI points)</th><th>Last ÷<br>previous</th><th>Top model</th><th>Median |change|<br>from published</th><th></th></tr></thead><tbody>'
   +row('<span class="sw" style="border-color:'+mut+';border-top-style:dashed"></span>','Epoch’s published ECI (Bayesian fit, posterior means)','–','–',pg,top(PF),'–','','')
@@ -76,7 +83,7 @@ function drawFit(){
   tr.push({x:h.F.map(o=>o.d),y:h.F.map(o=>o.e-1.645*h.r.sd[o.i]),type:'scatter',mode:'lines',line:{width:0},fill:'tonexty',fillcolor:css('--band'),hoverinfo:'skip'})}
  tr.push({x:PF.map(o=>o.d),y:PF.map(o=>o.e),customdata:PF.map(o=>o.m),type:'scatter',mode:'lines+markers',line:{color:mut,width:2.2,dash:'dash'},marker:{size:4,color:mut},hovertemplate:'<b>%{customdata}</b><br>Epoch’s published ECI %{y:.1f}<extra></extra>'});
  PRE.forEach(q=>tr.push({x:q.F.map(o=>o.d),y:q.F.map(o=>o.e),customdata:q.F.map(o=>o.m),type:'scatter',mode:'lines',line:{color:ink,width:1.5,dash:q.dash},opacity:.8,hovertemplate:'<b>%{customdata}</b><br>'+esc(q.v.label)+' (precomputed)<br>capability %{y:.1f}<extra></extra>'}));
- XH.forEach(x=>{const cur=x===h;tr.push({x:x.F.map(o=>o.d),y:x.F.map(o=>o.e),customdata:x.F.map(o=>[o.m,Number.isFinite(x.r.sd[o.i])&&x.r.sd[o.i]>0?' (approx. 90%: '+(o.e-1.645*x.r.sd[o.i]).toFixed(1)+' to '+(o.e+1.645*x.r.sd[o.i]).toFixed(1)+')':'']),type:'scatter',mode:'lines+markers',opacity:cur?1:0.6,
+ XH.forEach(x=>{const cur=x===h;tr.push({x:x.F.map(o=>o.d),y:x.F.map(o=>o.e),customdata:x.F.map(o=>[o.m+(Number.isFinite(xCost(o.i))?' · cost index '+xCost(o.i):''),Number.isFinite(x.r.sd[o.i])&&x.r.sd[o.i]>0?' (approx. 90%: '+(o.e-1.645*x.r.sd[o.i]).toFixed(1)+' to '+(o.e+1.645*x.r.sd[o.i]).toFixed(1)+')':'']),type:'scatter',mode:'lines+markers',opacity:cur?1:0.6,
   line:{color:x.col,width:cur?3.4:1.6},marker:{size:cur?7:4,color:x.col,line:{color:bg,width:cur?1.2:0}},hovertemplate:'<b>%{customdata[0]}</b><br>'+esc(xLabel(x))+'<br>capability %{y:.1f}%{customdata[1]}<extra></extra>'})});
  Plotly.react('xplot',tr,lay('Frontier capability (ECI scale)','',{xaxis:{type:'date',range:[RAW.start,new Date(+new Date(RAW.snapshot)+40*DAY).toISOString().slice(0,10)],gridcolor:grid,zeroline:false,tickfont:{color:mut}},
   shapes:[FIT.low[1],FIT.high[1]].map(v=>({type:'line',xref:'paper',yref:'y',x0:0,x1:1,y0:v,y1:v,line:{color:ink,width:1,dash:'dot'},opacity:.6,layer:'below'}))}),cfgP);
@@ -104,10 +111,12 @@ function drawFit(){
   +'<p><b>Other settings.</b> The L2 penalty is the one in Epoch’s least-squares fit (0.1, spread over all parameters); it matters little except for models and benchmarks with few scores. A common slope makes every benchmark equally steep (a Rasch model). Requiring more scores per model drops sparsely tested models, which changes the frontier where a record was set on a handful of benchmarks.</p>'
   +'<p><b>Comparing fits.</b> In-sample RMSE is in score points for every loss, so it favours least squares on scores by construction. The hold-out check is fairer: it refits five times, each time leaving out a random fifth of the scores, and reports the error in predicting them (the same folds for every fit). Neither tells you much about the spacing of models above 150, because a held-out score near 100% barely moves whichever way the top is stretched.</p>'
   +'<p><b>Intervals.</b> The shaded band on the selected fit is an approximate 90% interval from the curvature of the loss at the best fit (a delta-method standard error, carried through the 130/150 rescaling), not a bootstrap or a posterior. It treats scores as independent and each benchmark’s noise level as known, so it is, if anything, too narrow. Epoch’s published intervals for the same models are a little wider.</p>'
+  +'<p><b>Cost cap.</b> “Models costing at most” restricts every frontier, and the growth figures, to models at or below an approximate inference cost, to show capability at a fixed cost. The fit itself is unchanged. The cost index is roughly dollars per task on a typical benchmark: Epoch’s data has no price table, but '+(COSTS?COSTS.benchmarks.length:15)+' benchmarks report what each run cost, and the index is each model’s effect in a fit of log cost on model and benchmark (scripts/cost_index.py; it explains '+(COSTS?Math.round(COSTS.r2*100):95)+'% of the variation, with a typical miss of a factor of '+(COSTS?COSTS.resid_factor:1.9)+'). It reflects what benchmark runners paid, with their harness and reasoning setting, not a price per token. About a third of models have no cost and drop out under a cap, including the newest ones until benchmarks report on them; a model with only two or three cost figures can be off by a factor of two or more. Hover a point for its cost index.</p>'
   +'<p><b>Free curves (npca).</b> Three fits that take minutes, not milliseconds, are precomputed and shown as black dotted or dashed reference lines and table rows when the box above is ticked: logistic plus a fitted floor and ceiling, one free shape shared by all benchmarks, and a free piecewise-linear curve per benchmark (npca). They use least squares on all benchmarks and cannot be combined with the choices here; the method and more variants are on the <a href="npca.html">nonparametric page</a>. A second capability dimension is also there. Nothing here is saved; the link records the choices, so a fit can be shared.</p>';
 }
 XK.forEach(k=>document.getElementById('x'+k).onchange=e=>{xc[k]=e.target.value;changed()});
 document.getElementById('xpre').onchange=()=>drawFit();
+document.getElementById('xcap').onchange=e=>{xCap=+e.target.value;drawFit();saveHash()};
 document.getElementById('xclear').onclick=()=>{XH=XCUR?[XCUR]:[];drawFit()};
 document.getElementById('xcv').onclick=()=>{const h=XCUR,b=document.getElementById('xcv'),msg=document.getElementById('xmsg');if(!h||h.cv)return;b.disabled=true;msg.className='';msg.textContent='Running the hold-out check (five refits)…';
  setTimeout(()=>{try{xCV(h)}catch(e){}drawFit()},30)};

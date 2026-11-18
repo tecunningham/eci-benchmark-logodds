@@ -98,6 +98,17 @@ Intervals come from 100 refits on benchmarks resampled with replacement. They're
 - **Pulling the other way:** OTIS Mock AIME (−1.67), DTBench (−0.32), WeirdML (−0.25).
 - The per-benchmark implied shifts are in `data/curve_leverage.json` and on the nonparametric page.
 
+### Why does the free curve read more growth? An intuition
+
+[`scripts/npca_why.py`](scripts/npca_why.py) checks four things.
+
+1. **It is a uniform stretch of the top of the scale, not a re-weighting of benchmarks.** Between the two anchors (130–150) the piecewise-linear scale tracks the logistic one for one (slope 1.01). Above 150 it is stretched by about 22% (slope 1.22). The gap between today's strongest models and those of a year ago goes from 17.7 points to 21.7.
+2. **No particular benchmarks drive it.** Every benchmark's own scores imply a bigger gap under the free curve (typically 16–18 points becoming 20–21), and each benchmark carries almost the same weight under both curves. The near-saturated benchmarks carry almost none under either.
+3. **The data only weakly ask for it.** If the top were really compressed, benchmarks would look *steeper* among models above 150 than among models at 125–150. On the 11 benchmarks with enough scores on both sides they are, if anything, slightly flatter (median ratio 0.92, flatter on 7 of 11). The logistic's in-sample residuals above 150 are within about one point of zero in every predicted-score band.
+4. **Fit quality does not depend on it.** Take the logistic scale, multiply every distance above 150 by a factor, and refit the free curves: in-sample RMSE is 0.0768, 0.0764, 0.0764, 0.0764, 0.0765 for factors 0.8, 1.0, 1.2, 1.5 and 2.0.
+
+So the intuition is this. A logistic gives each benchmark one steepness, set mostly by the many models between the anchors, and that steepness is the yardstick carried up past 150: a move from 60% to 80% counts for the same capability wherever it happens. A free curve has no such yardstick. Each benchmark can be as flat or steep as it likes above 150, so the fit can slide the top models further apart and flatten every curve's upper end to match, at no cost in error. Which way it slides is decided by the curve's penalties and by small features of the data: benchmarks are slightly flatter near the top than a logistic (point 3, and the forward test's 7-point shortfall where the logistic predicts over 80%), and a curve that approaches 100% slowly reads each late gain as more capability. That is why the stretch grows as the pull toward the logistic weakens, and why it does not settle. The free curve's extra growth is therefore a statement about what the data *permit*, not what they *show*.
+
 ### Forward test of the joint fits: which curve predicts models above the top anchor?
 
 [`scripts/npca_forward.py`](scripts/npca_forward.py) is the one held-out test that touches the spacing above GPT-5:
@@ -282,6 +293,7 @@ The second tab refits capability from the same scores with the modelling choices
   | Precomputed: piecewise-linear (npca) | 14.4 → 27.2 | 181.3 |
 
   The symmetric links and the four losses agree to within a couple of points. The asymmetric links do not: a log-log curve, which approaches 100% slowly, puts the latest models far higher, and a complementary log-log curve puts them lower (166 for the top model under least squares). This is the same sensitivity as in the nonparametric section: above GPT-5's 150, the spacing between models is set by the curve's shape.
+- **Cost cap.** "Models costing at most" restricts every frontier and growth figure to models at or below an approximate inference cost; the fit is unchanged. The cost index ([`scripts/cost_index.py`](scripts/cost_index.py) → `data/cost_index.json`) is roughly dollars per task on a typical benchmark: 15 benchmark files in Epoch's zip report run costs, and the index is each model's effect in a fit of log cost on model and benchmark (586 pairs, R² 0.95, typical miss a factor of 1.9), using the cost of a model's best-scoring version where the score column is known. 164 of 257 models have one; the rest, including GPT-6.2 Astra, drop out under a cap. Dropping a single benchmark moves the index by a factor of 1.1–1.4 on average, and by much more for models costed on only that benchmark. With a cap of 10 the published frontier grows 16.0 → 15.6 points over the two 12-month windows (top model GPT-6.1 Sol, 168.6); with a cap of 1, 14.7 → 10.5 (GPT-6 Luna, 156.4). So at a fixed cost there is no speed-up in the last year on these data.
 - **Precomputed free-curve fits.** The three joint fits behind the first tab's Curve menu (floor + ceiling, shared shape, piecewise-linear npca) appear as reference rows and dotted lines, with a checkbox to hide them. They are least-squares fits on all benchmarks and can't be combined with the choices on this tab.
 - **Not included:** a fitted floor and ceiling, free-form curves and a second factor, which take minutes and are on the nonparametric page.
 

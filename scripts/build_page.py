@@ -9,6 +9,10 @@ for key, src in [("/*FITTAB*/", "fit_tab.js"), ("/*FAILTAB*/", "fail_tab.js")]: 
     assert page.count(key) == 1, key
     page = page.replace(key, (ROOT / "scripts" / src).read_text())
 fails = ROOT / "data" / "failures.json"   # notes for the fourth tab; "<" escaped so the text cannot close the script tag
+costs = ROOT / "data" / "cost_index.json"   # approximate cost per model, for the cost cap
+key = "/*COSTS*/"
+assert page.count(key) == 1, key
+page = page.replace(key, costs.read_text() if costs.exists() else "null")
 key = "/*FAILS*/"
 assert page.count(key) == 1, key
 if fails.exists():

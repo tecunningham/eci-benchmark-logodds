@@ -204,6 +204,7 @@ a{color:var(--accent)}
  <label>Scores of 0% / 100% held at <select id="xclip"><option value="0.001">0.1% / 99.9% (Epoch’s)</option><option value="0.01">1% / 99%</option><option value="0.05">5% / 95%</option></select></label>
  <label>L2 penalty <select id="xreg"><option value="0.1">0.1 (Epoch’s least-squares fit)</option><option value="1">1</option><option value="10">10</option><option value="0">None</option></select></label>
  <label>Models <select id="xmin"><option value="4">All in Epoch’s fit (4 or more scores)</option><option value="8">8 or more scores</option><option value="12">12 or more scores</option></select></label>
+ <label>Models costing at most <select id="xcap"><option value="0">Any cost</option><option value="30">30</option><option value="10">10</option><option value="3">3</option><option value="1">1</option><option value="0.3">0.3</option></select> <span style="font-size:12.5px">(≈ $ per task; approximate)</span></label>
  <button type="button" class="xbtn" id="xcv">Run hold-out check</button>
  <button type="button" class="xbtn" id="xclear">Clear comparison</button>
  <label style="display:inline-flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="xpre" checked style="accent-color:var(--accent)">Show precomputed free-curve fits (npca)</label>
@@ -240,7 +241,7 @@ function showFallback(){document.getElementById('plot').hidden=true;document.que
 /*FLEX*/
 if(typeof Plotly==='undefined'){showFallback()}
 else try{
-const RAW=/*DATA*/,CF=/*CURVES*/,RN=/*RNULL*/,FAILS=/*FAILS*/;
+const RAW=/*DATA*/,CF=/*CURVES*/,RN=/*RNULL*/,FAILS=/*FAILS*/,COSTS=/*COSTS*/;
 const sel=document.getElementById('hl'),FIT=RAW.fit,EPS=0.01;
 CF.variants=CF.variants.filter(v=>v.theta.length===RAW.models.length&&v.imp.length===RAW.b.length);
 const RNOK=RN.b.length===RAW.b.length&&RN.b.every((x,k)=>x.name===RAW.b[k].name);
@@ -361,7 +362,7 @@ function changed(fromHash){
  if(tab==='fit'){fitmsg.className='';fitmsg.textContent='Untick benchmarks to leave them out of the fit above.'}
  derive();build();if(!fromHash)saveHash();
 }
-function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',hm&&tab==='frontier'?'m='+encodeURIComponent(hm):'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):''].filter(Boolean).join('&');
+function saveHash(){const off=B.filter(d=>!d.on).map(d=>d.k);const h=[lab?'lab='+encodeURIComponent(lab):'',off.length?'drop='+off.join('.'):'',curve!=='eci'?'curve='+curve:'',scale!=='logodds'?'scale='+scale:'',FROM!==RAW.start?'from='+FROM:'',hm&&tab==='frontier'?'m='+encodeURIComponent(hm):'',tab!=='frontier'?'tab='+tab:'',tab==='resid'&&rY!=='logodds'?'ry='+rY:'',tab==='resid'&&rShow!=='scores'?'rshow='+rShow:'',tab==='resid'&&rX!=='shared'?'rx='+rX:'',tab==='resid'&&rSort!=='area'?'rsort='+rSort:'',tab==='fit'&&XK.some(k=>xc[k]!==XDEF[k])?'x='+XK.map(k=>xc[k]).join('_'):'',tab==='fit'&&xCap?'xc='+xCap:''].filter(Boolean).join('&');
  try{history.replaceState(null,'',h?'#'+h:location.pathname+location.search)}catch(e){}}
 function readHash(){
  const g=k=>decodeURIComponent((location.hash.match(new RegExp(k+'=([^&]*)'))||[])[1]||'');
@@ -369,7 +370,7 @@ function readHash(){
  curve=CURVES[g('curve')]?g('curve'):'eci';cs.value=curve;scale=g('scale')==='implied'?'implied':'logodds';
  hm=M.some(o=>o.m===g('m'))?g('m'):'';
  FROM=[...fs_.options].some(o=>o.value===g('from'))?g('from'):RAW.start;fs_.value=FROM;syncButtons();
- tab=g('tab')==='resid'?'resid':g('tab')==='fit'?'fit':g('tab')==='fail'?'fail':'frontier';{const v=g('x').split('_');xc={...XDEF};if(v.length===XK.length)XK.forEach((k,j)=>{const o=document.getElementById('x'+k);if([...o.options].some(q=>q.value===v[j]))xc[k]=v[j]});XK.forEach(k=>document.getElementById('x'+k).value=xc[k])}rY=g('ry')==='linear'?'linear':'logodds';rShow=g('rshow')==='resid'?'resid':'scores';rX=g('rx')==='own'?'own':'shared';{const v=g('rsort'),o=document.getElementById('rsort');if([...o.options].some(x=>x.value===v)){rSort=v;o.value=v}}syncTabs();
+ tab=g('tab')==='resid'?'resid':g('tab')==='fit'?'fit':g('tab')==='fail'?'fail':'frontier';{const v=g('x').split('_');xc={...XDEF};if(v.length===XK.length)XK.forEach((k,j)=>{const o=document.getElementById('x'+k);if([...o.options].some(q=>q.value===v[j]))xc[k]=v[j]});XK.forEach(k=>document.getElementById('x'+k).value=xc[k])}{const o=document.getElementById('xcap'),v=g('xc');xCap=[...o.options].some(q=>q.value===v)?+v:0;o.value=String(xCap)}rY=g('ry')==='linear'?'linear':'logodds';rShow=g('rshow')==='resid'?'resid':'scores';rX=g('rx')==='own'?'own':'shared';{const v=g('rsort'),o=document.getElementById('rsort');if([...o.options].some(x=>x.value===v)){rSort=v;o.value=v}}syncTabs();
  const off=new Set(g('drop').split('.').filter(Boolean).map(Number));B.forEach(d=>d.on=!off.has(d.k));
  if(off.size)document.getElementById('fitbox').open=true;
 }
