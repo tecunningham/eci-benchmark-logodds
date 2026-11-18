@@ -1,4 +1,4 @@
-// ---- third tab: refit capability in the browser under other modelling choices (solver: scripts/flex_fit.js) ----
+// ---- “Try other fitting choices” tab: refit capability in the browser under other modelling choices (solver: scripts/flex_fit.js) ----
 // Spliced into scripts/page_template.html by build_page.py, inside its main script, so it shares M, B, RAW, FIT, rows, css() etc.
 const XCOL=['#1d64f2','#e8177d','#ff7a00','#00a86b','#8b3dff','#00b4d8'];
 const XLINK={logit:'Logistic',probit:'Probit',cauchit:'Cauchit',cloglog:'Complementary log-log',loglog:'Log-log'};
@@ -53,10 +53,13 @@ function drawFit(){
  const msg=document.getElementById('xmsg');
  if(msg.className!=='err')msg.textContent='Selected: '+xLabel(h)+'. Fitted in '+h.ms+' ms on '+h.r.n.toLocaleString()+' scores, '+h.r.nModels+' models and '+h.r.nBench+' benchmarks.';
  // comparison table
+ const PRE=document.getElementById('xpre').checked?CF.variants.map((v,j)=>{const F=xFrontier(v.theta),dv=M.map((o,i)=>o.shown&&Number.isFinite(v.theta[i])?Math.abs(v.theta[i]-o.pub):NaN).filter(Number.isFinite).sort((a,b)=>a-b);
+  return{v,F,g:xGrowth(F),med:dv[dv.length>>1],dash:['dot','dashdot','longdash'][j%3],css:['dotted','dashed','double'][j%3]}}):[];
  const PF=frontier(M.filter(o=>o.shown).map(o=>({d:o.d,m:o.m,e:o.pub}))),pg=xGrowth(PF),f1=v=>Number.isFinite(v)?v.toFixed(1):'–',top=F=>F.length?F[F.length-1]:null;
  const row=(sw,name,rm,cv,g,tp,med,attr,x)=>'<tr'+attr+'><td>'+sw+'</td><td>'+name+'</td><td>'+rm+'</td><td>'+cv+'</td><td>'+f1(g.prev)+'</td><td>'+f1(g.last)+'</td><td>'+(Number.isFinite(g.ratio)?g.ratio.toFixed(2)+'×':'–')+'</td><td>'+(tp?tp.m.replace(/</g,'&lt;')+' '+tp.e.toFixed(1):'–')+'</td><td>'+med+'</td><td>'+x+'</td></tr>';
  document.getElementById('xtable').innerHTML='<thead><tr><th></th><th>Fit</th><th>In-sample RMSE<br>(score points)</th><th>Hold-out RMSE<br>(score points)</th><th>Frontier growth,<br>previous 12 months<br>(ECI points)</th><th>Frontier growth,<br>last 12 months<br>(ECI points)</th><th>Last ÷<br>previous</th><th>Top model</th><th>Median |change|<br>from published</th><th></th></tr></thead><tbody>'
   +row('<span class="sw" style="border-color:'+mut+';border-top-style:dashed"></span>','Epoch’s published ECI (Bayesian fit, posterior means)','–','–',pg,top(PF),'–','','')
+  +PRE.map(q=>row('<span class="sw" style="border-color:'+ink+';border-top-style:'+q.css+'"></span>',q.v.label.replace(/</g,'&lt;')+' <span style="color:'+mut+'">(precomputed joint fit, least squares, all benchmarks)</span>',(q.v.rmse*100).toFixed(2),'–',q.g,top(q.F),q.med.toFixed(2),'','')).join('')
   +XH.slice().reverse().map(x=>row('<span class="sw" style="border-color:'+x.col+'"></span>',xLabel(x),(x.r.rmse*100).toFixed(2),x.cv?(x.cv.rmse*100).toFixed(2):'–',x.g,top(x.F),x.med.toFixed(2),' data-x="'+x.id+'"'+(x===h?' class="cur"':''),'<button type="button" data-xrm="'+x.id+'" aria-label="Remove this fit">✕</button>')).join('')+'</tbody>';
  document.querySelectorAll('#xtable tr[data-x]').forEach(tr=>tr.onclick=e=>{const x=XH.find(v=>v.id===+tr.dataset.x);if(!x)return;
   if(e.target.dataset.xrm){XH=XH.filter(v=>v!==x);if(XCUR===x){XCUR=null;if(XH.length)xSelect(XH[XH.length-1]);else buildFit()}else drawFit();return}
@@ -72,6 +75,7 @@ function drawFit(){
  if(sdOK){tr.push({x:h.F.map(o=>o.d),y:h.F.map(o=>o.e+1.645*h.r.sd[o.i]),type:'scatter',mode:'lines',line:{width:0},hoverinfo:'skip'});
   tr.push({x:h.F.map(o=>o.d),y:h.F.map(o=>o.e-1.645*h.r.sd[o.i]),type:'scatter',mode:'lines',line:{width:0},fill:'tonexty',fillcolor:css('--band'),hoverinfo:'skip'})}
  tr.push({x:PF.map(o=>o.d),y:PF.map(o=>o.e),customdata:PF.map(o=>o.m),type:'scatter',mode:'lines+markers',line:{color:mut,width:2.2,dash:'dash'},marker:{size:4,color:mut},hovertemplate:'<b>%{customdata}</b><br>Epoch’s published ECI %{y:.1f}<extra></extra>'});
+ PRE.forEach(q=>tr.push({x:q.F.map(o=>o.d),y:q.F.map(o=>o.e),customdata:q.F.map(o=>o.m),type:'scatter',mode:'lines',line:{color:ink,width:1.5,dash:q.dash},opacity:.8,hovertemplate:'<b>%{customdata}</b><br>'+esc(q.v.label)+' (precomputed)<br>capability %{y:.1f}<extra></extra>'}));
  XH.forEach(x=>{const cur=x===h;tr.push({x:x.F.map(o=>o.d),y:x.F.map(o=>o.e),customdata:x.F.map(o=>[o.m,Number.isFinite(x.r.sd[o.i])&&x.r.sd[o.i]>0?' (approx. 90%: '+(o.e-1.645*x.r.sd[o.i]).toFixed(1)+' to '+(o.e+1.645*x.r.sd[o.i]).toFixed(1)+')':'']),type:'scatter',mode:'lines+markers',opacity:cur?1:0.6,
   line:{color:x.col,width:cur?3.4:1.6},marker:{size:cur?7:4,color:x.col,line:{color:bg,width:cur?1.2:0}},hovertemplate:'<b>%{customdata[0]}</b><br>'+esc(xLabel(x))+'<br>capability %{y:.1f}%{customdata[1]}<extra></extra>'})});
  Plotly.react('xplot',tr,lay('Frontier capability (ECI scale)','',{xaxis:{type:'date',range:[RAW.start,new Date(+new Date(RAW.snapshot)+40*DAY).toISOString().slice(0,10)],gridcolor:grid,zeroline:false,tickfont:{color:mut}},
@@ -100,9 +104,10 @@ function drawFit(){
   +'<p><b>Other settings.</b> The L2 penalty is the one in Epoch’s least-squares fit (0.1, spread over all parameters); it matters little except for models and benchmarks with few scores. A common slope makes every benchmark equally steep (a Rasch model). Requiring more scores per model drops sparsely tested models, which changes the frontier where a record was set on a handful of benchmarks.</p>'
   +'<p><b>Comparing fits.</b> In-sample RMSE is in score points for every loss, so it favours least squares on scores by construction. The hold-out check is fairer: it refits five times, each time leaving out a random fifth of the scores, and reports the error in predicting them (the same folds for every fit). Neither tells you much about the spacing of models above 150, because a held-out score near 100% barely moves whichever way the top is stretched.</p>'
   +'<p><b>Intervals.</b> The shaded band on the selected fit is an approximate 90% interval from the curvature of the loss at the best fit (a delta-method standard error, carried through the 130/150 rescaling), not a bootstrap or a posterior. It treats scores as independent and each benchmark’s noise level as known, so it is, if anything, too narrow. Epoch’s published intervals for the same models are a little wider.</p>'
-  +'<p><b>Not here yet.</b> A fitted floor and ceiling per benchmark, free-form (nonparametric) curves, and a second capability dimension are on the <a href="npca.html">nonparametric page</a>, where the fits take minutes, not milliseconds. Nothing here is saved; the link records the choices, so a fit can be shared.</p>';
+  +'<p><b>Free curves (npca).</b> Three fits that take minutes, not milliseconds, are precomputed and shown as black dotted or dashed reference lines and table rows when the box above is ticked: logistic plus a fitted floor and ceiling, one free shape shared by all benchmarks, and a free piecewise-linear curve per benchmark (npca). They use least squares on all benchmarks and cannot be combined with the choices here; the method and more variants are on the <a href="npca.html">nonparametric page</a>. A second capability dimension is also there. Nothing here is saved; the link records the choices, so a fit can be shared.</p>';
 }
 XK.forEach(k=>document.getElementById('x'+k).onchange=e=>{xc[k]=e.target.value;changed()});
+document.getElementById('xpre').onchange=()=>drawFit();
 document.getElementById('xclear').onclick=()=>{XH=XCUR?[XCUR]:[];drawFit()};
 document.getElementById('xcv').onclick=()=>{const h=XCUR,b=document.getElementById('xcv'),msg=document.getElementById('xmsg');if(!h||h.cv)return;b.disabled=true;msg.className='';msg.textContent='Running the hold-out check (five refits)…';
  setTimeout(()=>{try{xCV(h)}catch(e){}drawFit()},30)};

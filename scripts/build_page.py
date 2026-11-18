@@ -1,6 +1,6 @@
 """Build index.html (the GitHub Pages entry point): scripts/page_template.html with
 data/eci_data.json, data/curve_fits.json (capability under other benchmark curves), data/resid_null.json (simulated null for the residual tab) and the in-browser
-ECI solver (scripts/eci_fit.js), the open-choices solver (scripts/flex_fit.js) and the third tab's code (scripts/fit_tab.js) embedded."""
+ECI solver (scripts/eci_fit.js), the open-choices solver (scripts/flex_fit.js) and the fitting-choices tab's code (scripts/fit_tab.js) embedded."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

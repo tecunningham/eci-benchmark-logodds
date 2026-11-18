@@ -5,8 +5,8 @@
 The dashboard ([`index.html`](index.html)) has four tabs:
 
 1. **Frontier over time.** Frontier ECI with the benchmark scores behind it, in log-odds.
-2. **Fit by benchmark (residuals).** One panel per benchmark: does it follow a logistic in ECI?
-3. **Try other fitting choices.** Refit capability in your browser under a different link function, loss, clipping rule, penalty or model filter, and compare the frontier and its growth across fits. See [below](#trying-other-fitting-choices-in-the-browser).
+2. **Try other fitting choices.** Refit capability in your browser under a different link function, loss, clipping rule, penalty or model filter, and compare the frontier and its growth across fits. See [below](#trying-other-fitting-choices-in-the-browser).
+3. **Fit by benchmark (residuals).** One panel per benchmark: does it follow a logistic in ECI?
 4. **What frontier models still fail at.** For twelve benchmarks that are not yet saturated: ordered from least to most saturated (by the best score any model has), each with two failed tasks where a specific attempt by a current frontier model is documented (otherwise two sample tasks), as a table of task, reference answer (and how it was baselined), whether the task is solvable, and the agent's answer with its score; click a row for details. Each benchmark also has a line on whether 100% is attainable. Only evidence from the last six months is used. Sources: `data/failures_rows.json` (rows), `data/failures.json` (notes, built by `scripts/failures_curate.py` from `data/failures_full.json`).
 
 > **Data update, 17 Nov 2026.** The data are Epoch's `benchmark_data.zip` as retrieved on 17 Nov 2026: 256 models (latest released 9 Nov 2026), 57 benchmarks, 2,879 scores. Since the 1 Oct snapshot Epoch has dropped five benchmarks from ECI (DeepSWE, HLE, Lech Mazur Writing, SWE-Bench verified, ScienceQA), added two (SpireClimb, WeirdML v3), and now drops models with fewer than four scores between 10% and 90%.
@@ -33,7 +33,7 @@ Numbers are for the 17 Nov 2026 data unless marked. Growth is the rise of the fr
    The ratio of last-year to previous-year growth is 1.88 for the piecewise-linear curve against 1.61 for the logistic and 1.51 for published ECI. The direction is the same in every case, though for the two curves tied to a common shape the difference is now small.
 5. **But the size of the correction is not identified.** Above GPT-5 (fixed at 150), nothing pins the spacing between models except the curve's shape.
    - The curves the forward test favours (weak pulls) do not settle in joint fits: at a pull of 1, last-year growth is still rising at 33 points a year after 80 rounds.
-   - The same sensitivity shows up when only the link function is changed (third tab of the dashboard): a log-log link, which approaches 100% slowly, puts the top model at 192 instead of 173.
+   - The same sensitivity shows up when only the link function is changed (the “Try other fitting choices” tab of the dashboard): a log-log link, which approaches 100% slowly, puts the top model at 192 instead of 173.
    - Random cross-validation is nearly blind to spacing, so the piecewise-linear curve's 27 points a year reflects a chosen pull, not an estimate. The honest summary: ECI probably understates how fast frontier capability rose in the last year, by an amount these data can't pin down, and whether growth is *accelerating* at all depends on the measurement window.
 
 Epoch AI's [Capabilities Index](https://epoch.ai/eci) (ECI) fits one capability number per model from ~60 benchmarks, using
@@ -253,12 +253,12 @@ Winogrande's slope is pinned at 1 to fix the raw scale, and the result is mapped
 - **Without Winogrande**, the benchmark with the most scores is pinned instead, at its slope from the full fit.
 - **Dropped models.** A model with no scores left drops out. The two anchor models must keep at least one score.
 - **On the chart.** Unticked benchmarks stay visible as faded dotted lines, and the published frontier is drawn faded behind the refitted one.
-- **No intervals for refits** on this tab. The third tab gives approximate ones.
+- **No intervals for refits** on this tab. The “Try other fitting choices” tab gives approximate ones.
 - **Median slope.** The slope-matched axis uses the median slope of the refit.
 
 ## Trying other fitting choices in the browser
 
-The third tab refits capability from the same scores with the modelling choices left open ([`scripts/flex_fit.js`](scripts/flex_fit.js), UI in [`scripts/fit_tab.js`](scripts/fit_tab.js)). Every fit has the form `score ≈ G(slope_b × (capability_m − difficulty_b))`, rescaled so Claude 3.5 Sonnet = 130 and GPT-5 = 150.
+The second tab refits capability from the same scores with the modelling choices left open ([`scripts/flex_fit.js`](scripts/flex_fit.js), UI in [`scripts/fit_tab.js`](scripts/fit_tab.js)). Every fit has the form `score ≈ G(slope_b × (capability_m − difficulty_b))`, rescaled so Claude 3.5 Sonnet = 130 and GPT-5 = 150.
 
 - **Link `G`:** logistic, probit, cauchit, complementary log-log, log-log.
 - **Loss:** least squares on scores (Epoch's earlier fit); Beta likelihood (Epoch's current model); cross-entropy; least squares on the link scale.

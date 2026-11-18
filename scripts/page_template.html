@@ -130,8 +130,8 @@ a{color:var(--accent)}
 <p class="src">Built by Tom Cunningham @ METR, from Epoch AI’s <a href="https://epoch.ai/benchmarks/eci">Epoch Capabilities Index</a></p>
 <nav class="tabs" role="tablist" aria-label="View">
  <button role="tab" data-tab="frontier" aria-selected="true">Frontier over time</button>
- <button role="tab" data-tab="resid" aria-selected="false">Fit by benchmark (residuals)</button>
  <button role="tab" data-tab="fit" aria-selected="false">Try other fitting choices</button>
+ <button role="tab" data-tab="resid" aria-selected="false">Fit by benchmark (residuals)</button>
  <button role="tab" data-tab="fail" aria-selected="false">What frontier models still fail at</button>
 </nav>
 <div id="ftab">
@@ -206,6 +206,7 @@ a{color:var(--accent)}
  <label>Models <select id="xmin"><option value="4">All in Epoch’s fit (4 or more scores)</option><option value="8">8 or more scores</option><option value="12">12 or more scores</option></select></label>
  <button type="button" class="xbtn" id="xcv">Run hold-out check</button>
  <button type="button" class="xbtn" id="xclear">Clear comparison</button>
+ <label style="display:inline-flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="xpre" checked style="accent-color:var(--accent)">Show precomputed free-curve fits (npca)</label>
 </div>
 <p id="xmsg"></p>
 <div class="xwrap"><table class="xt" id="xtable"></table></div>
