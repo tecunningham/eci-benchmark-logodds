@@ -1,10 +1,10 @@
-# Next steps: handoff note (as of 17 Nov 2026)
+# Next steps: handoff note (as of 18 Nov 2026)
 
 Written for the next Claude session working in this repo. Read this first, then `README.md`.
 
-## Session of 17 Nov 2026: read this first
+## Session of 17–18 Nov 2026: read this first
 
-- **Data updated** to Epoch's zip as retrieved 17 Nov 2026 (256 models, 57 benchmarks, 2,879 scores). To update again: download https://epoch.ai/data/benchmark_data.zip, copy the three files in its `epoch_capabilities_index/` folder into `data/epoch/`, set `SNAPSHOT` in `scripts/build_data.py`, add any new benchmark to `scripts/areas.py`, then run `build_data`, `npca_build`, `npca_links`, `npca_accel`, `curve_fits`, `resid_null`, `npca_forward`, the four figure scripts and both page builders (about 55 minutes on 4 cores, with `OMP_NUM_THREADS=1`).
+- **Data updated** to Epoch's zip as retrieved 18 Nov 2026 (257 models, 57 benchmarks, 2,895 scores; Epoch refreshes the file more than once a day). To update again: download https://epoch.ai/data/benchmark_data.zip, copy the three files in its `epoch_capabilities_index/` folder into `data/epoch/`, set `SNAPSHOT` in `scripts/build_data.py`, add any new benchmark to `scripts/areas.py`, then run `build_data`, `npca_build`, `npca_links`, `npca_accel`, `curve_fits`, `resid_null`, `npca_forward`, the four figure scripts and both page builders (about 55 minutes on 4 cores, with `OMP_NUM_THREADS=1`).
 - **Epoch now publishes a Bayesian fit** (Beta likelihood around the same logistic, MCMC; `eci-public/src/eci/bayesian.py`). `scripts/eci_fit.py` is the old least-squares objective and no longer reproduces published ECI exactly (median gap 0.9 points). Every analysis script still refits by least squares. Not yet done: porting the nonparametric analyses to the Beta likelihood, and simulating the residual tab's null from the Bayesian fit.
 - **The dashboard is now "ECI Explorer" with four tabs.** The page is assembled by `scripts/build_page.py` from `page_template.html` plus `eci_fit.js`, `flex_fit.js` (open-choices solver), `fit_tab.js` (third tab) and `fail_tab.js` (fourth tab).
   - “Try other fitting choices” tab (second): link, loss, clipping, penalty, common slope, minimum scores per model; approximate delta-method intervals; 5-fold hold-out. Not included: fitted floor/ceiling, free curves.
