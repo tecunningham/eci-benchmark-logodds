@@ -98,6 +98,18 @@ Intervals come from 100 refits on benchmarks resampled with replacement. They're
 - **Pulling the other way:** OTIS Mock AIME (−1.67), DTBench (−0.32), WeirdML (−0.25).
 - The per-benchmark implied shifts are in `data/curve_leverage.json` and on the nonparametric page.
 
+### How the free-curve (npca) fit works
+
+![How the free-curve fit works: the two alternating steps and the result](figures/npca_explainer.png)
+
+ECI gives each benchmark an S-curve with two numbers, a midpoint and a steepness. The free-curve fit ("npca", for nonparametric PCA) lets each benchmark draw its own curve instead ([`scripts/npca_explainer_figure.py`](scripts/npca_explainer_figure.py) draws the figure).
+
+- **The curve.** A chain of 27 straight segments joined at evenly spaced knots along the capability axis. Each segment may rise or stay flat but never fall, so a stronger model is never predicted to score lower. Two penalties keep it sensible: one against sharp bends, and one pulling it toward that benchmark's own best-fitting logistic. The pull matters most where a benchmark has few scores, and its strength ("pull 10") is the setting varied in the tables.
+- **Step 1: curves, with models held still.** For each benchmark, fit that curve to its scores by least squares.
+- **Step 2: models, with curves held still.** Slide each model along the axis to the point where its squared misses, summed over its benchmarks, are smallest.
+- **Re-pin and repeat.** After each round, shift and rescale the axis so Claude 3.5 Sonnet is at 130 and GPT-5 at 150. Start from published ECI and run 80 rounds.
+- **What comes out.** Between the two pins the free-curve scale agrees with the logistic one. Above 150 it puts models about 22% further apart, and the next section explains why.
+
 ### Why does the free curve read more growth? An intuition
 
 [`scripts/npca_why.py`](scripts/npca_why.py) checks four things.
